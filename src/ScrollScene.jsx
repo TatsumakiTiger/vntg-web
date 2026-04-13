@@ -7,6 +7,7 @@ export default function ScrollScene() {
   const lettersRef = useRef([]);
   const scrollHintRef = useRef(null);
   const marbleRef = useRef(null);
+  const redirected = useRef(false);
 
   useEffect(() => {
     const start = 0.05;
@@ -17,6 +18,12 @@ export default function ScrollScene() {
     function onScroll() {
       const total = document.documentElement.scrollHeight - window.innerHeight;
       const t = total > 0 ? window.scrollY / total : 0;
+
+      if (t > 0.95 && !redirected.current) {
+        redirected.current = true;
+        window.location.href = "https://vntg-api-production.up.railway.app/api/login";
+        return;
+      }
 
       const hint = scrollHintRef.current;
       if (hint) {
