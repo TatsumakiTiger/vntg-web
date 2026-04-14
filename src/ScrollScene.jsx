@@ -3,6 +3,8 @@ import { useEffect, useRef } from "react";
 const LETTERS = ["V", "A", "N", "T", "A", "G", "E"];
 const fadeOrder = [6, 5, 4, 3, 2, 1, 0];
 
+const API_URL = import.meta.env.VITE_API_URL || "https://vntg-api-production.up.railway.app";
+
 export default function ScrollScene() {
   const lettersRef = useRef([]);
   const scrollHintRef = useRef(null);
@@ -19,9 +21,10 @@ export default function ScrollScene() {
       const total = document.documentElement.scrollHeight - window.innerHeight;
       const t = total > 0 ? window.scrollY / total : 0;
 
+      // Redirect when fully scrolled
       if (t > 0.95 && !redirected.current) {
         redirected.current = true;
-        window.location.href = "https://vntg-api-production.up.railway.app/api/login";
+        window.location.href = `${API_URL}/api/login`;
         return;
       }
 
@@ -32,7 +35,6 @@ export default function ScrollScene() {
         hint.style.transform = `translateX(-50%) translateY(${(1 - h) * 10}px)`;
       }
 
-      // Marble fades out as letters disappear
       const marble = marbleRef.current;
       if (marble) {
         const mOp = Math.max(0, 0.12 - t * 0.14);
@@ -93,8 +95,6 @@ export default function ScrollScene() {
       `}</style>
 
       <div style={{ background: "#000", height: "170vh" }}>
-
-        {/* Marble texture overlay */}
         <div
           ref={marbleRef}
           style={{
@@ -109,7 +109,6 @@ export default function ScrollScene() {
           }}
         />
 
-        {/* Letters */}
         <div style={{
           position: "fixed",
           inset: 0,
@@ -140,7 +139,6 @@ export default function ScrollScene() {
           ))}
         </div>
 
-        {/* Scroll hint */}
         <div
           ref={scrollHintRef}
           style={{
