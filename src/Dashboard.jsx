@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
@@ -9,12 +9,26 @@ export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Cookie is sent automatically — no token in URL or localStorage needed
+    // Grab token from URL (after OAuth callback) or from localStorage
+    const tokenFromUrl = searchParams.get("token");
+    if (tokenFromUrl) {
+      localStorage.setItem("vntg_session", tokenFromUrl);
+      window.history.replaceState({}, "", "/dashboard");
+    }
+
+    const token = tokenFromUrl || localStorage.getItem("vntg_session");
+
+    if (!token) {
+      navigate("/");
+      return;
+    }
+
     fetch(`${API_URL}/api/me`, {
-      credentials: "include", // tells browser to send the httpOnly cookie
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
         if (!res.ok) throw new Error("unauthorized");
@@ -25,17 +39,14 @@ export default function Dashboard() {
         setLoading(false);
       })
       .catch(() => {
+        localStorage.removeItem("vntg_session");
         navigate("/");
       });
   }, []);
 
   function handleLogout() {
-    fetch(`${API_URL}/api/logout`, {
-      method: "POST",
-      credentials: "include",
-    }).finally(() => {
-      navigate("/");
-    });
+    localStorage.removeItem("vntg_session");
+    navigate("/");
   }
 
   if (loading)
