@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 const LETTERS = ["V", "A", "N", "T", "A", "G", "E"];
 const fadeOrder = [6, 5, 4, 3, 2, 1, 0];
@@ -14,6 +15,14 @@ export default function ScrollScene() {
   const leftPanelRef = useRef(null);
   const rightPanelRef = useRef(null);
   const redirected = useRef(false);
+  const navigate = useNavigate();
+
+  // If already logged in, skip to dashboard
+  useEffect(() => {
+    if (localStorage.getItem("vntg_session")) {
+      navigate("/dashboard");
+    }
+  }, []);
 
   useEffect(() => {
     const start = 0.05;
