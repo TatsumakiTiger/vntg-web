@@ -34,27 +34,35 @@ const AGENT_ROLES = {
   Miks: "Controller", Veto: "Controller", Skye: "Initiator",
 };
 
+const PAGE_SIZE = 20;
+
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [videos, setVideos] = useState([]);
   const [videosLoading, setVideosLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [filterAgent, setFilterAgent] = useState("");
   const [filterMap, setFilterMap] = useState("");
   const [filterPlayer, setFilterPlayer] = useState("");
+  const [filterOptions, setFilterOptions] = useState({ agents: [], maps: [], players: [] });
   const [activeTab, setActiveTab] = useState("proview");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const sentinelRef = useRef(null);
+  const fetchSeq = useRef(0);
 
   /* ── Auth ── */
   useEffect(() => {
     const tokenFromUrl = searchParams.get("token");
     if (tokenFromUrl) {
-      localStorage.setItem("vntg_session", tokenFromUrl);
+      try { localStorage.setItem("vntg_session", tokenFromUrl); } catch {}
       window.history.replaceState({}, "", "/dashboard");
     }
 
-    const token = tokenFromUrl || localStorage.getItem("vntg_session");
+    let token = tokenFromUrl;
+    try { token = token || localStorage.getItem("vntg_session"); } catch {}
     if (!token) { navigate("/"); return; }
 
     fetch(`${API_URL}/api/me`, {
@@ -62,33 +70,92 @@ export default function Dashboard() {
     })
       .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
       .then((data) => { setUser(data); setLoading(false); })
-      .catch(() => { localStorage.removeItem("vntg_session"); navigate("/"); });
+      .catch(() => {
+        try { localStorage.removeItem("vntg_session"); } catch {}
+        navigate("/");
+      });
   }, []);
 
-  /* ── Fetch videos ── */
+  /* ── Fetch filter options once ── */
   useEffect(() => {
-    fetch(`${API_URL}/api/videos`)
+    fetch(`${API_URL}/api/videos/filters`)
       .then((r) => r.json())
-      .then((data) => { setVideos(data); setVideosLoading(false); })
-      .catch(() => setVideosLoading(false));
+      .then((data) => setFilterOptions(data))
+      .catch(() => {});
   }, []);
 
-  /* ── Derived filter options ── */
-  const agents = useMemo(() => [...new Set(videos.map((v) => v.agent))].sort(), [videos]);
-  const maps = useMemo(() => [...new Set(videos.map((v) => v.map))].sort(), [videos]);
-  const players = useMemo(() => [...new Set(videos.map((v) => v.player))].sort(), [videos]);
+  /* ── Fetch first page when filters change ── */
+  useEffect(() => {
+    const seq = ++fetchSeq.current;
+    setVideosLoading(true);
+    setVideos([]);
+    setHasMore(true);
 
-  const filtered = useMemo(() => {
-    return videos.filter((v) => {
-      if (filterAgent && v.agent !== filterAgent) return false;
-      if (filterMap && v.map !== filterMap) return false;
-      if (filterPlayer && v.player !== filterPlayer) return false;
-      return true;
-    });
-  }, [videos, filterAgent, filterMap, filterPlayer]);
+    const params = new URLSearchParams({ limit: PAGE_SIZE, offset: 0 });
+    if (filterAgent) params.set("agent", filterAgent);
+    if (filterMap) params.set("map", filterMap);
+    if (filterPlayer) params.set("player", filterPlayer);
+
+    fetch(`${API_URL}/api/videos?${params}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (seq !== fetchSeq.current) return;
+        setVideos(data);
+        setHasMore(data.length === PAGE_SIZE);
+        setVideosLoading(false);
+      })
+      .catch(() => {
+        if (seq !== fetchSeq.current) return;
+        setVideosLoading(false);
+        setHasMore(false);
+      });
+  }, [filterAgent, filterMap, filterPlayer]);
+
+  /* ── Load more on scroll ── */
+  function loadMore() {
+    if (loadingMore || videosLoading || !hasMore) return;
+    setLoadingMore(true);
+    const seq = fetchSeq.current;
+
+    const params = new URLSearchParams({ limit: PAGE_SIZE, offset: videos.length });
+    if (filterAgent) params.set("agent", filterAgent);
+    if (filterMap) params.set("map", filterMap);
+    if (filterPlayer) params.set("player", filterPlayer);
+
+    fetch(`${API_URL}/api/videos?${params}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (seq !== fetchSeq.current) return;
+        setVideos((prev) => [...prev, ...data]);
+        setHasMore(data.length === PAGE_SIZE);
+        setLoadingMore(false);
+      })
+      .catch(() => {
+        if (seq !== fetchSeq.current) return;
+        setLoadingMore(false);
+        setHasMore(false);
+      });
+  }
+
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+      },
+      { rootMargin: "400px" }
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [videos, hasMore, loadingMore, videosLoading, filterAgent, filterMap, filterPlayer]);
+
+  const agents = filterOptions.agents;
+  const maps = filterOptions.maps;
+  const players = filterOptions.players;
+  const filtered = videos;
 
   function handleLogout() {
-    localStorage.removeItem("vntg_session");
+    try { localStorage.removeItem("vntg_session"); } catch {}
     navigate("/");
   }
 
@@ -200,7 +267,7 @@ export default function Dashboard() {
                   )}
                 </div>
                 <span style={styles.resultCount}>
-                  {filtered.length} {filtered.length === 1 ? "VOD" : "VODów"}
+                  {filtered.length}{hasMore ? "+" : ""} {filtered.length === 1 ? "VOD" : "VODów"}
                 </span>
               </div>
 
@@ -216,17 +283,30 @@ export default function Dashboard() {
                   <span style={styles.emptyIcon}>🎬</span>
                   <p style={styles.emptyTitle}>Brak VODów</p>
                   <p style={styles.emptyDesc}>
-                    {videos.length === 0
-                      ? "VODy pojawią się tu automatycznie gdy VMonitor je wykryje."
-                      : "Zmień filtry żeby zobaczyć więcej wyników."}
+                    {(filterAgent || filterMap || filterPlayer)
+                      ? "Zmień filtry żeby zobaczyć więcej wyników."
+                      : "VODy pojawią się tu automatycznie gdy VMonitor je wykryje."}
                   </p>
                 </div>
               ) : (
-                <div style={styles.grid}>
-                  {filtered.map((v, i) => (
-                    <VodCard key={v.video_id} video={v} index={i} />
-                  ))}
-                </div>
+                <>
+                  <div style={styles.grid}>
+                    {filtered.map((v, i) => (
+                      <VodCard key={v.video_id} video={v} index={i} />
+                    ))}
+                  </div>
+                  <div ref={sentinelRef} style={{ height: 1 }} />
+                  {loadingMore && (
+                    <div style={{ textAlign: "center", padding: "24px 0", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+                      Ładuję kolejne VOD-y…
+                    </div>
+                  )}
+                  {!hasMore && filtered.length > 0 && (
+                    <div style={{ textAlign: "center", padding: "24px 0", color: "rgba(255,255,255,0.25)", fontSize: 12 }}>
+                      To już wszystko.
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
