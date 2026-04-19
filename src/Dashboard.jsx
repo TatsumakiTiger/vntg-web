@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 const API_URL =
@@ -149,17 +149,21 @@ export default function Dashboard() {
           {[
             { id: "proview", label: "ProView" },
             { id: "profile", label: "Profil" },
+            { id: "aimtrainer", label: "Aim Trainer", disabled: true },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => !tab.disabled && setActiveTab(tab.id)}
+              disabled={tab.disabled}
               style={{
                 ...styles.tab,
                 ...(activeTab === tab.id ? styles.tabActive : {}),
+                ...(tab.disabled ? styles.tabDisabled : {}),
               }}
             >
               {tab.label}
-              {activeTab === tab.id && <div style={styles.tabIndicator} />}
+              {tab.disabled && <span style={styles.tabSoon}>soon</span>}
+              {activeTab === tab.id && !tab.disabled && <div style={styles.tabIndicator} />}
             </button>
           ))}
         </nav>
@@ -355,29 +359,88 @@ function ProfileField({ label, value }) {
 
 /* ── Select component ── */
 function Select({ value, onChange, placeholder, options }) {
-  const optionStyle = { background: "#111117", color: "#fff" };
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [highlight, setHighlight] = useState(0);
+  const wrapRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const filtered = useMemo(() => {
+    if (!query) return options;
+    const q = query.toLowerCase();
+    return options.filter((o) => o.toLowerCase().includes(q));
+  }, [options, query]);
+
+  // Close on outside click
+  useEffect(() => {
+    function onDocClick(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  // Reset highlight when filter changes
+  useEffect(() => {
+    setHighlight(0);
+  }, [query, open]);
+
+  function choose(opt) {
+    onChange(opt);
+    setOpen(false);
+    setQuery("");
+    inputRef.current?.blur();
+  }
+
+  function onKeyDown(e) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setOpen(true);
+      setHighlight((h) => Math.min(h + 1, filtered.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlight((h) => Math.max(h - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (filtered[highlight]) choose(filtered[highlight]);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+      setQuery("");
+      inputRef.current?.blur();
+    }
+  }
+
+  const displayValue = open ? query : value;
+
   return (
-    <div style={styles.selectWrap}>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+    <div ref={wrapRef} style={styles.selectWrap}>
+      <input
+        ref={inputRef}
+        type="text"
+        value={displayValue}
+        placeholder={placeholder}
+        onFocus={() => setOpen(true)}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+        onKeyDown={onKeyDown}
+        autoComplete="off"
         style={{
           ...styles.select,
-          color: value ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)",
+          color: value || query ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)",
           paddingRight: value ? 32 : 14,
         }}
-      >
-        <option value="" style={optionStyle}>{placeholder}</option>
-        {options.map((opt) => (
-          <option key={opt} value={opt} style={optionStyle}>{opt}</option>
-        ))}
-      </select>
+      />
       {value && (
         <button
           type="button"
-          onClick={(e) => {
+          onMouseDown={(e) => {
+            e.preventDefault();
             e.stopPropagation();
             onChange("");
+            setQuery("");
+            setOpen(false);
           }}
           style={styles.selectClearBtn}
           aria-label={`Wyczyść filtr ${placeholder}`}
@@ -385,6 +448,30 @@ function Select({ value, onChange, placeholder, options }) {
         >
           ✕
         </button>
+      )}
+      {open && (
+        <div style={styles.selectDropdown}>
+          {filtered.length === 0 ? (
+            <div style={{ ...styles.selectOption, color: "rgba(255,255,255,0.3)", cursor: "default" }}>
+              Brak wyników
+            </div>
+          ) : (
+            filtered.map((opt, i) => (
+              <div
+                key={opt}
+                onMouseDown={(e) => { e.preventDefault(); choose(opt); }}
+                onMouseEnter={() => setHighlight(i)}
+                style={{
+                  ...styles.selectOption,
+                  ...(i === highlight ? styles.selectOptionActive : {}),
+                  ...(opt === value ? { color: "#60a5fa" } : {}),
+                }}
+              >
+                {opt}
+              </div>
+            ))
+          )}
+        </div>
       )}
     </div>
   );
@@ -409,7 +496,7 @@ const styles = {
     width: 600,
     height: 600,
     borderRadius: "50%",
-    background: "radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)",
+    background: "radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)",
     pointerEvents: "none",
     animation: "glow 8s ease-in-out infinite",
   },
@@ -438,8 +525,8 @@ const styles = {
     fontSize: 9,
     fontWeight: 600,
     letterSpacing: 2,
-    color: "rgba(139,92,246,0.9)",
-    background: "rgba(139,92,246,0.12)",
+    color: "rgba(59,130,246,0.9)",
+    background: "rgba(59,130,246,0.12)",
     padding: "2px 8px",
     borderRadius: 4,
     textTransform: "uppercase",
@@ -493,13 +580,30 @@ const styles = {
   tabActive: {
     color: "#fff",
   },
+  tabDisabled: {
+    cursor: "not-allowed",
+    color: "rgba(255,255,255,0.2)",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+  },
+  tabSoon: {
+    fontSize: 9,
+    fontWeight: 600,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: "rgba(59,130,246,0.85)",
+    background: "rgba(59,130,246,0.12)",
+    padding: "2px 6px",
+    borderRadius: 4,
+  },
   tabIndicator: {
     position: "absolute",
     bottom: 0,
     left: 20,
     right: 20,
     height: 2,
-    background: "linear-gradient(90deg, #8B5CF6, #6366F1)",
+    background: "linear-gradient(90deg, #3B82F6, #06B6D4)",
     borderRadius: "2px 2px 0 0",
   },
 
@@ -563,6 +667,35 @@ const styles = {
     padding: 0,
     fontFamily: "inherit",
     transition: "all 0.15s",
+    zIndex: 2,
+  },
+  selectDropdown: {
+    position: "absolute",
+    top: "calc(100% + 4px)",
+    left: 0,
+    right: 0,
+    minWidth: 160,
+    maxHeight: 240,
+    overflowY: "auto",
+    background: "#111117",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 8,
+    padding: 4,
+    zIndex: 20,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+  },
+  selectOption: {
+    padding: "7px 10px",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.85)",
+    borderRadius: 5,
+    cursor: "pointer",
+    fontFamily: "'Outfit', sans-serif",
+    userSelect: "none",
+  },
+  selectOptionActive: {
+    background: "rgba(59,130,246,0.15)",
+    color: "#fff",
   },
   clearBtn: {
     background: "none",
@@ -625,7 +758,7 @@ const styles = {
   playIcon: {
     fontSize: 28,
     color: "#fff",
-    background: "rgba(139,92,246,0.8)",
+    background: "rgba(59,130,246,0.8)",
     width: 48,
     height: 48,
     borderRadius: "50%",
@@ -730,13 +863,13 @@ const styles = {
     width: 72,
     height: 72,
     borderRadius: "50%",
-    border: "3px solid rgba(139,92,246,0.3)",
+    border: "3px solid rgba(59,130,246,0.3)",
   },
   profileAvatarRing: {
     position: "absolute",
     inset: -4,
     borderRadius: "50%",
-    border: "2px solid rgba(139,92,246,0.15)",
+    border: "2px solid rgba(59,130,246,0.15)",
   },
   profileName: {
     fontSize: 22,
@@ -788,8 +921,8 @@ const styles = {
     width: 40,
     height: 40,
     borderRadius: "50%",
-    border: "3px solid rgba(139,92,246,0.2)",
-    borderTopColor: "#8B5CF6",
+    border: "3px solid rgba(59,130,246,0.2)",
+    borderTopColor: "#3B82F6",
     animation: "spin 0.8s linear infinite",
   },
   loadingText: {
