@@ -344,6 +344,16 @@ function ProfileCard({ user }) {
         <ProfileField label="Dołączył" value={user.created_at ? new Date(user.created_at).toLocaleDateString("pl-PL") : "—"} />
         <ProfileField label="Ostatnie logowanie" value={user.last_login ? new Date(user.last_login).toLocaleDateString("pl-PL") : "—"} />
       </div>
+
+      <div style={styles.profileDivider} />
+      <div style={styles.connectionsSection}>
+        <span style={styles.connectionsLabel}>Powiązane konta</span>
+        <button type="button" disabled style={styles.riotConnectBtn}>
+          <span style={styles.riotIcon}>R</span>
+          <span style={styles.riotText}>Połącz z kontem Riot</span>
+          <span style={styles.riotSoon}>soon</span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -905,6 +915,61 @@ const styles = {
     fontSize: 13,
     color: "rgba(255,255,255,0.7)",
     fontWeight: 500,
+  },
+  connectionsSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
+  connectionsLabel: {
+    fontSize: 11,
+    color: "rgba(255,255,255,0.3)",
+    fontWeight: 500,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+  },
+  riotConnectBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "10px 14px",
+    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 8,
+    cursor: "not-allowed",
+    fontFamily: "inherit",
+    width: "100%",
+    textAlign: "left",
+  },
+  riotIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    background: "linear-gradient(135deg, #ff4655, #b91c1c)",
+    color: "#fff",
+    fontFamily: "'Bebas Neue', sans-serif",
+    fontSize: 18,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    opacity: 0.6,
+    flexShrink: 0,
+  },
+  riotText: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.35)",
+    fontWeight: 500,
+    flex: 1,
+  },
+  riotSoon: {
+    fontSize: 9,
+    fontWeight: 600,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: "rgba(59,130,246,0.85)",
+    background: "rgba(59,130,246,0.12)",
+    padding: "2px 6px",
+    borderRadius: 4,
   },
 
   /* Loading */
