@@ -51,8 +51,9 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("proview");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const sentinelRef = useRef(null);
   const fetchSeq = useRef(0);
+  const loadMoreRef = useRef(() => {});
+  const observerRef = useRef(null);
 
   /* ── Auth ── */
   useEffect(() => {
@@ -125,8 +126,8 @@ export default function Dashboard() {
       .catch(() => {});
   }, [filterAgent, filterMap, filterPlayer]);
 
-  /* ── Load more on scroll ── */
-  function loadMore() {
+  /* ── Load more (always latest closure via ref) ── */
+  loadMoreRef.current = function loadMore() {
     if (loadingMore || videosLoading || !hasMore) return;
     setLoadingMore(true);
     const seq = fetchSeq.current;
@@ -149,19 +150,23 @@ export default function Dashboard() {
         setLoadingMore(false);
         setHasMore(false);
       });
-  }
+  };
 
-  useEffect(() => {
-    if (!sentinelRef.current) return;
-    const observer = new IntersectionObserver(
+  /* ── Stable callback ref: attaches observer once when sentinel mounts ── */
+  const sentinelRef = (node) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+    if (!node) return;
+    observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) loadMore();
+        if (entries[0].isIntersecting) loadMoreRef.current();
       },
-      { rootMargin: "400px" }
+      { rootMargin: "600px" }
     );
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [videos, hasMore, loadingMore, videosLoading, filterAgent, filterMap, filterPlayer]);
+    observerRef.current.observe(node);
+  };
 
   const agents = filterOptions.agents;
   const maps = filterOptions.maps;
