@@ -244,7 +244,6 @@ function VodCard({ video, index }) {
   const role = AGENT_ROLES[video.agent] || "Duelist";
   const roleColor = ROLE_COLORS[role] || "#fff";
   const agentColor = AGENT_COLORS[video.agent] || "#888";
-  const thumbnailUrl = `https://img.youtube.com/vi/${video.video_id}/mqdefault.jpg`;
 
   return (
     <a
@@ -261,16 +260,42 @@ function VodCard({ video, index }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Thumbnail */}
-      <div style={styles.thumbWrap}>
-        <img src={thumbnailUrl} alt="" style={styles.thumbImg} />
-        <div style={styles.thumbOverlay}>
-          <span style={styles.playIcon}>▶</span>
-        </div>
-        {/* Agent badge */}
-        <div style={{ ...styles.agentBadge, background: `${agentColor}22`, borderColor: `${agentColor}44` }}>
-          <span style={{ color: agentColor, fontWeight: 600, fontSize: 11 }}>{video.agent}</span>
-        </div>
+      {/* Map + Agent display (replaces YouTube thumbnail) */}
+      <div
+        style={{
+          ...styles.thumbWrap,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          background: `linear-gradient(135deg, ${agentColor}14 0%, rgba(10,10,15,0.95) 100%)`,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 32,
+            fontWeight: 800,
+            letterSpacing: 2,
+            textTransform: "uppercase",
+            color: "#fff",
+            lineHeight: 1,
+          }}
+        >
+          {video.map}
+        </span>
+        <span
+          style={{
+            fontSize: 16,
+            fontWeight: 600,
+            letterSpacing: 1,
+            textTransform: "uppercase",
+            color: agentColor,
+            lineHeight: 1,
+          }}
+        >
+          {video.agent}
+        </span>
       </div>
 
       {/* Info */}
@@ -281,10 +306,11 @@ function VodCard({ video, index }) {
             {role}
           </span>
         </div>
-        <div style={styles.cardMeta}>
-          <span style={styles.metaItem}>🗺 {video.map}</span>
-          {video.channel && <span style={styles.metaItem}>📺 {video.channel}</span>}
-        </div>
+        {video.channel && (
+          <div style={styles.cardMeta}>
+            <span style={styles.metaItem}>📺 {video.channel}</span>
+          </div>
+        )}
       </div>
     </a>
   );
@@ -329,20 +355,38 @@ function ProfileField({ label, value }) {
 
 /* ── Select component ── */
 function Select({ value, onChange, placeholder, options }) {
+  const optionStyle = { background: "#111117", color: "#fff" };
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      style={{
-        ...styles.select,
-        color: value ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)",
-      }}
-    >
-      <option value="">{placeholder}</option>
-      {options.map((opt) => (
-        <option key={opt} value={opt}>{opt}</option>
-      ))}
-    </select>
+    <div style={styles.selectWrap}>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          ...styles.select,
+          color: value ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)",
+          paddingRight: value ? 32 : 14,
+        }}
+      >
+        <option value="" style={optionStyle}>{placeholder}</option>
+        {options.map((opt) => (
+          <option key={opt} value={opt} style={optionStyle}>{opt}</option>
+        ))}
+      </select>
+      {value && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onChange("");
+          }}
+          style={styles.selectClearBtn}
+          aria-label={`Wyczyść filtr ${placeholder}`}
+          title="Wyczyść"
+        >
+          ✕
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -481,6 +525,11 @@ const styles = {
     alignItems: "center",
     flexWrap: "wrap",
   },
+  selectWrap: {
+    position: "relative",
+    display: "inline-flex",
+    alignItems: "center",
+  },
   select: {
     background: "rgba(255,255,255,0.04)",
     border: "1px solid rgba(255,255,255,0.08)",
@@ -493,6 +542,27 @@ const styles = {
     minWidth: 120,
     appearance: "none",
     WebkitAppearance: "none",
+  },
+  selectClearBtn: {
+    position: "absolute",
+    right: 8,
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: 18,
+    height: 18,
+    borderRadius: "50%",
+    border: "none",
+    background: "rgba(255,255,255,0.12)",
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 10,
+    lineHeight: 1,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+    fontFamily: "inherit",
+    transition: "all 0.15s",
   },
   clearBtn: {
     background: "none",
