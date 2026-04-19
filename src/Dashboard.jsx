@@ -43,6 +43,7 @@ export default function Dashboard() {
   const [videosLoading, setVideosLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState(null);
   const [filterAgent, setFilterAgent] = useState("");
   const [filterMap, setFilterMap] = useState("");
   const [filterPlayer, setFilterPlayer] = useState("");
@@ -84,19 +85,24 @@ export default function Dashboard() {
       .catch(() => {});
   }, []);
 
-  /* ── Fetch first page when filters change ── */
+  /* ── Fetch first page + total count when filters change ── */
   useEffect(() => {
     const seq = ++fetchSeq.current;
     setVideosLoading(true);
     setVideos([]);
     setHasMore(true);
+    setTotal(null);
 
-    const params = new URLSearchParams({ limit: PAGE_SIZE, offset: 0 });
-    if (filterAgent) params.set("agent", filterAgent);
-    if (filterMap) params.set("map", filterMap);
-    if (filterPlayer) params.set("player", filterPlayer);
+    const filterParams = new URLSearchParams();
+    if (filterAgent) filterParams.set("agent", filterAgent);
+    if (filterMap) filterParams.set("map", filterMap);
+    if (filterPlayer) filterParams.set("player", filterPlayer);
 
-    fetch(`${API_URL}/api/videos?${params}`)
+    const pageParams = new URLSearchParams(filterParams);
+    pageParams.set("limit", PAGE_SIZE);
+    pageParams.set("offset", 0);
+
+    fetch(`${API_URL}/api/videos?${pageParams}`)
       .then((r) => r.json())
       .then((data) => {
         if (seq !== fetchSeq.current) return;
@@ -109,6 +115,14 @@ export default function Dashboard() {
         setVideosLoading(false);
         setHasMore(false);
       });
+
+    fetch(`${API_URL}/api/videos/count?${filterParams}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (seq !== fetchSeq.current) return;
+        setTotal(data.total);
+      })
+      .catch(() => {});
   }, [filterAgent, filterMap, filterPlayer]);
 
   /* ── Load more on scroll ── */
@@ -267,7 +281,7 @@ export default function Dashboard() {
                   )}
                 </div>
                 <span style={styles.resultCount}>
-                  {filtered.length}{hasMore ? "+" : ""} {filtered.length === 1 ? "VOD" : "VODów"}
+                  {total ?? filtered.length} {(total ?? filtered.length) === 1 ? "VOD" : "VODów"}
                 </span>
               </div>
 
