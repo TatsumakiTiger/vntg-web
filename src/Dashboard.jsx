@@ -209,6 +209,12 @@ export default function Dashboard() {
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         @keyframes glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.7; } }
+        @keyframes betaFire {
+          0%   { transform: translate(0, 0) scale(1); opacity: 0; }
+          15%  { opacity: 0.95; }
+          55%  { transform: translate(var(--dx, 0), -10px) scale(0.75); opacity: 0.55; }
+          100% { transform: translate(var(--dx, 0), -20px) scale(0.15); opacity: 0; }
+        }
       `}</style>
 
       <div style={styles.root}>
@@ -219,7 +225,10 @@ export default function Dashboard() {
         <header style={styles.header}>
           <div style={styles.headerLeft}>
             <span style={styles.logo}>VANTAGE</span>
-            <span style={styles.logoBeta}>BETA</span>
+            <span style={styles.logoBetaWrap}>
+              <span style={styles.logoBeta}>BETA</span>
+              <BetaFire />
+            </span>
           </div>
           <div style={styles.headerRight}>
             <img src={avatarUrl} alt="" style={styles.headerAvatar} />
@@ -234,7 +243,7 @@ export default function Dashboard() {
         <nav style={styles.tabBar}>
           {[
             { id: "proview", label: "ProView" },
-            { id: "akademia", label: "Akademia Vantage" },
+            { id: "akademia", label: "Discord" },
             { id: "profile", label: "Profil" },
             { id: "aimtrainer", label: "Aim Trainer", disabled: true },
           ].map((tab) => (
@@ -454,23 +463,16 @@ function ProfileCard({ user }) {
 
 /* ── Academy Card ── */
 function AcademyCard() {
-  const INVITE_URL = "https://discord.gg/tACGtp42";
+  const INVITE_URL = "https://discord.gg/FCtHGpuDB8";
   return (
     <div style={styles.academyCard}>
       <div style={styles.academyGlow} />
       <div style={styles.academyHeader}>
         <span style={styles.academyBadge}>COMMUNITY</span>
-        <h2 style={styles.academyTitle}>AKADEMIA VANTAGE</h2>
+        <h2 style={styles.academyTitle}>DISCORD</h2>
         <p style={styles.academySubtitle}>
-          Dołącz do społeczności graczy Valoranta, którzy chcą się rozwijać.
-          VODy, coaching, wspólne gry — wszystko w jednym miejscu.
+          Dołącz do społeczności Vantage.
         </p>
-      </div>
-
-      <div style={styles.academyPerks}>
-        <AcademyPerk icon="🎬" title="VODy od proów" desc="Materiały w panelu ProView z filtrami" />
-        <AcademyPerk icon="🎯" title="Coaching" desc="Wskazówki od doświadczonych graczy" />
-        <AcademyPerk icon="🤝" title="LFG / Premy" desc="Znajdź zgraną ekipę do rankedów" />
       </div>
 
       <a
@@ -484,8 +486,53 @@ function AcademyCard() {
         </svg>
         Dołącz przez Discord
       </a>
-      <p style={styles.academyInvite}>discord.gg/tACGtp42</p>
+      <p style={styles.academyInvite}>discord.gg/FCtHGpuDB8</p>
     </div>
+  );
+}
+
+/* ── Pixel fire behind BETA badge ── */
+function BetaFire() {
+  const pixels = [
+    { x: 2,  dx: -1, delay: 0.0,  dur: 1.3 },
+    { x: 8,  dx: 0,  delay: 0.35, dur: 1.1 },
+    { x: 14, dx: 1,  delay: 0.7,  dur: 1.4 },
+    { x: 20, dx: 0,  delay: 0.2,  dur: 1.25 },
+    { x: 26, dx: -1, delay: 0.55, dur: 1.15 },
+    { x: 32, dx: 1,  delay: 0.9,  dur: 1.35 },
+    { x: 6,  dx: 1,  delay: 1.1,  dur: 1.2 },
+    { x: 24, dx: -1, delay: 0.8,  dur: 1.3 },
+  ];
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: -6,
+        height: 10,
+        pointerEvents: "none",
+      }}
+    >
+      {pixels.map((p, i) => (
+        <span
+          key={i}
+          style={{
+            position: "absolute",
+            left: p.x,
+            bottom: 0,
+            width: 2,
+            height: 2,
+            background: "#fff",
+            boxShadow: "0 0 4px rgba(255,255,255,0.9)",
+            imageRendering: "pixelated",
+            animation: `betaFire ${p.dur}s ${p.delay}s infinite steps(6)`,
+            ["--dx"]: `${p.dx}px`,
+          }}
+        />
+      ))}
+    </span>
   );
 }
 
@@ -674,7 +721,12 @@ const styles = {
     letterSpacing: 4,
     color: "#fff",
   },
+  logoBetaWrap: {
+    position: "relative",
+    display: "inline-block",
+  },
   logoBeta: {
+    display: "inline-block",
     fontSize: 9,
     fontWeight: 600,
     letterSpacing: 2,
@@ -1166,8 +1218,9 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    width: "100%",
-    padding: "14px 24px",
+    width: "fit-content",
+    margin: "0 auto",
+    padding: "14px 32px",
     background: "#5865F2",
     color: "#fff",
     border: "none",
