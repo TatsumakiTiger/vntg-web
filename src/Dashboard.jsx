@@ -533,22 +533,31 @@ function PixelFlame({ left, delay, dur, scale = 1 }) {
 }
 
 function BetaFire() {
-  // Flames spaced along the BETA badge width, each with its own rhythm
+  // Dense row of flames spanning the full BETA badge — overlapping so it reads
+  // as one continuous pixel flame instead of separate sparks. Varied scale +
+  // staggered timing gives natural flicker.
   const flames = [
-    { left: 2,  delay: 0.0,  dur: 2.6, scale: 1 },
-    { left: 11, delay: 0.7,  dur: 2.9, scale: 1.15 },
-    { left: 20, delay: 1.3,  dur: 2.4, scale: 0.9 },
-    { left: 29, delay: 0.35, dur: 2.75, scale: 1.05 },
+    { left: -2, delay: 0.10, dur: 2.7, scale: 0.85 },
+    { left: 2,  delay: 0.60, dur: 2.4, scale: 1.10 },
+    { left: 6,  delay: 1.20, dur: 2.9, scale: 0.95 },
+    { left: 10, delay: 0.30, dur: 2.5, scale: 1.20 },
+    { left: 14, delay: 0.90, dur: 2.8, scale: 0.90 },
+    { left: 18, delay: 0.00, dur: 2.6, scale: 1.15 },
+    { left: 22, delay: 1.40, dur: 2.4, scale: 1.00 },
+    { left: 26, delay: 0.50, dur: 3.0, scale: 1.25 },
+    { left: 30, delay: 1.00, dur: 2.5, scale: 0.90 },
+    { left: 34, delay: 0.20, dur: 2.7, scale: 1.05 },
+    { left: 38, delay: 0.80, dur: 2.6, scale: 0.85 },
   ];
   return (
     <span
       aria-hidden="true"
       style={{
         position: "absolute",
-        left: 0,
-        right: 0,
-        top: -10,
-        height: 12,
+        left: -4,
+        right: -4,
+        top: -11,
+        height: 14,
         pointerEvents: "none",
       }}
     >
