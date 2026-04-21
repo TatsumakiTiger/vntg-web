@@ -209,11 +209,12 @@ export default function Dashboard() {
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         @keyframes glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.7; } }
-        @keyframes betaFire {
-          0%   { transform: translate(0, 0) scale(1); opacity: 0; }
-          15%  { opacity: 0.95; }
-          55%  { transform: translate(var(--dx, 0), -10px) scale(0.75); opacity: 0.55; }
-          100% { transform: translate(var(--dx, 0), -20px) scale(0.15); opacity: 0; }
+        @keyframes flameFlick {
+          0%, 100% { transform: scaleY(1)   translateX(0);    opacity: 0.9; }
+          20%      { transform: scaleY(1.35) translateX(-1px); opacity: 0.75; }
+          40%      { transform: scaleY(0.7)  translateX(1px);  opacity: 1;    }
+          60%      { transform: scaleY(1.2)  translateX(-0.5px); opacity: 0.8; }
+          80%      { transform: scaleY(0.9)  translateX(0.5px); opacity: 0.95; }
         }
       `}</style>
 
@@ -492,16 +493,52 @@ function AcademyCard() {
 }
 
 /* ── Pixel fire behind BETA badge ── */
+function PixelFlame({ left, delay, dur, scale = 1 }) {
+  // Triangular pixel stack, widest at bottom → tip at top
+  const rows = [
+    { w: 8, b: 0, a: 0.55 }, // base (dimmer = cooler core illusion)
+    { w: 6, b: 2, a: 1 },
+    { w: 4, b: 4, a: 1 },
+    { w: 2, b: 6, a: 0.95 }, // tip
+  ];
+  return (
+    <span
+      style={{
+        position: "absolute",
+        left,
+        bottom: 0,
+        width: 8 * scale,
+        height: 10 * scale,
+        transformOrigin: "50% 100%",
+        animation: `flameFlick ${dur}s ${delay}s infinite steps(8)`,
+        imageRendering: "pixelated",
+      }}
+    >
+      {rows.map((r, i) => (
+        <span
+          key={i}
+          style={{
+            position: "absolute",
+            left: (8 - r.w) / 2,
+            bottom: r.b,
+            width: r.w,
+            height: 2,
+            background: `rgba(255,255,255,${r.a})`,
+            boxShadow: "0 0 4px rgba(255,255,255,0.7)",
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
 function BetaFire() {
-  const pixels = [
-    { x: 2,  dx: -1, delay: 0.0,  dur: 1.3 },
-    { x: 8,  dx: 0,  delay: 0.35, dur: 1.1 },
-    { x: 14, dx: 1,  delay: 0.7,  dur: 1.4 },
-    { x: 20, dx: 0,  delay: 0.2,  dur: 1.25 },
-    { x: 26, dx: -1, delay: 0.55, dur: 1.15 },
-    { x: 32, dx: 1,  delay: 0.9,  dur: 1.35 },
-    { x: 6,  dx: 1,  delay: 1.1,  dur: 1.2 },
-    { x: 24, dx: -1, delay: 0.8,  dur: 1.3 },
+  // Flames spaced along the BETA badge width, each with its own rhythm
+  const flames = [
+    { left: 2,  delay: 0.0,  dur: 2.6, scale: 1 },
+    { left: 11, delay: 0.7,  dur: 2.9, scale: 1.15 },
+    { left: 20, delay: 1.3,  dur: 2.4, scale: 0.9 },
+    { left: 29, delay: 0.35, dur: 2.75, scale: 1.05 },
   ];
   return (
     <span
@@ -510,27 +547,13 @@ function BetaFire() {
         position: "absolute",
         left: 0,
         right: 0,
-        top: -6,
-        height: 10,
+        top: -10,
+        height: 12,
         pointerEvents: "none",
       }}
     >
-      {pixels.map((p, i) => (
-        <span
-          key={i}
-          style={{
-            position: "absolute",
-            left: p.x,
-            bottom: 0,
-            width: 2,
-            height: 2,
-            background: "#fff",
-            boxShadow: "0 0 4px rgba(255,255,255,0.9)",
-            imageRendering: "pixelated",
-            animation: `betaFire ${p.dur}s ${p.delay}s infinite steps(6)`,
-            ["--dx"]: `${p.dx}px`,
-          }}
-        />
+      {flames.map((f, i) => (
+        <PixelFlame key={i} {...f} />
       ))}
     </span>
   );
