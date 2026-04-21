@@ -209,13 +209,6 @@ export default function Dashboard() {
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         @keyframes glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.7; } }
-        @keyframes flameFlick {
-          0%, 100% { transform: scaleY(1)   translateX(0);    opacity: 0.9; }
-          20%      { transform: scaleY(1.35) translateX(-1px); opacity: 0.75; }
-          40%      { transform: scaleY(0.7)  translateX(1px);  opacity: 1;    }
-          60%      { transform: scaleY(1.2)  translateX(-0.5px); opacity: 0.8; }
-          80%      { transform: scaleY(0.9)  translateX(0.5px); opacity: 0.95; }
-        }
       `}</style>
 
       <div style={styles.root}>
@@ -226,10 +219,7 @@ export default function Dashboard() {
         <header style={styles.header}>
           <div style={styles.headerLeft}>
             <span style={styles.logo}>VANTAGE</span>
-            <span style={styles.logoBetaWrap}>
-              <span style={styles.logoBeta}>BETA</span>
-              <BetaFire />
-            </span>
+            <span style={styles.logoBeta}>BETA</span>
           </div>
           <div style={styles.headerRight}>
             <img src={avatarUrl} alt="" style={styles.headerAvatar} />
@@ -492,82 +482,6 @@ function AcademyCard() {
   );
 }
 
-/* ── Pixel fire behind BETA badge ── */
-function PixelFlame({ left, delay, dur, scale = 1 }) {
-  // Triangular pixel stack, widest at bottom → tip at top
-  const rows = [
-    { w: 8, b: 0, a: 0.55 }, // base (dimmer = cooler core illusion)
-    { w: 6, b: 2, a: 1 },
-    { w: 4, b: 4, a: 1 },
-    { w: 2, b: 6, a: 0.95 }, // tip
-  ];
-  return (
-    <span
-      style={{
-        position: "absolute",
-        left,
-        bottom: 0,
-        width: 8 * scale,
-        height: 10 * scale,
-        transformOrigin: "50% 100%",
-        animation: `flameFlick ${dur}s ${delay}s infinite steps(8)`,
-        imageRendering: "pixelated",
-      }}
-    >
-      {rows.map((r, i) => (
-        <span
-          key={i}
-          style={{
-            position: "absolute",
-            left: (8 - r.w) / 2,
-            bottom: r.b,
-            width: r.w,
-            height: 2,
-            background: `rgba(255,255,255,${r.a})`,
-            boxShadow: "0 0 4px rgba(255,255,255,0.7)",
-          }}
-        />
-      ))}
-    </span>
-  );
-}
-
-function BetaFire() {
-  // Dense row of flames spanning the full BETA badge — overlapping so it reads
-  // as one continuous pixel flame instead of separate sparks. Varied scale +
-  // staggered timing gives natural flicker.
-  const flames = [
-    { left: -2, delay: 0.10, dur: 2.7, scale: 0.85 },
-    { left: 2,  delay: 0.60, dur: 2.4, scale: 1.10 },
-    { left: 6,  delay: 1.20, dur: 2.9, scale: 0.95 },
-    { left: 10, delay: 0.30, dur: 2.5, scale: 1.20 },
-    { left: 14, delay: 0.90, dur: 2.8, scale: 0.90 },
-    { left: 18, delay: 0.00, dur: 2.6, scale: 1.15 },
-    { left: 22, delay: 1.40, dur: 2.4, scale: 1.00 },
-    { left: 26, delay: 0.50, dur: 3.0, scale: 1.25 },
-    { left: 30, delay: 1.00, dur: 2.5, scale: 0.90 },
-    { left: 34, delay: 0.20, dur: 2.7, scale: 1.05 },
-    { left: 38, delay: 0.80, dur: 2.6, scale: 0.85 },
-  ];
-  return (
-    <span
-      aria-hidden="true"
-      style={{
-        position: "absolute",
-        left: -4,
-        right: -4,
-        top: -11,
-        height: 14,
-        pointerEvents: "none",
-      }}
-    >
-      {flames.map((f, i) => (
-        <PixelFlame key={i} {...f} />
-      ))}
-    </span>
-  );
-}
-
 function AcademyPerk({ icon, title, desc }) {
   return (
     <div style={styles.academyPerk}>
@@ -753,12 +667,7 @@ const styles = {
     letterSpacing: 4,
     color: "#fff",
   },
-  logoBetaWrap: {
-    position: "relative",
-    display: "inline-block",
-  },
   logoBeta: {
-    display: "inline-block",
     fontSize: 9,
     fontWeight: 600,
     letterSpacing: 2,
