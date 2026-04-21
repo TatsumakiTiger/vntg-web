@@ -12,8 +12,6 @@ export default function ScrollScene() {
   const lettersRef = useRef([]);
   const scrollHintRef = useRef(null);
   const marbleRef = useRef(null);
-  const leftPanelRef = useRef(null);
-  const rightPanelRef = useRef(null);
   const redirected = useRef(false);
   const navigate = useNavigate();
 
@@ -53,39 +51,6 @@ export default function ScrollScene() {
       const marble = marbleRef.current;
       if (marble) {
         marble.style.opacity = Math.max(0, 0.12 - t * 0.14);
-      }
-
-      /* ── panels fade & slide out ── */
-      const panelFadeStart = 0.03;
-      const panelFadeEnd = 0.35;
-      let panelOp = 1;
-      let panelBlur = 0;
-      let panelShift = 0;
-
-      if (t <= panelFadeStart) {
-        panelOp = 1;
-      } else if (t < panelFadeEnd) {
-        const p = (t - panelFadeStart) / (panelFadeEnd - panelFadeStart);
-        const ep = 1 - (1 - p) * (1 - p);
-        panelOp = 1 - ep;
-        panelBlur = ep * 8;
-        panelShift = ep * 30;
-      } else {
-        panelOp = 0;
-      }
-
-      const lp = leftPanelRef.current;
-      if (lp) {
-        lp.style.opacity = panelOp;
-        lp.style.filter = panelBlur > 0 ? `blur(${panelBlur}px)` : "none";
-        lp.style.transform = `translateX(${-panelShift}px)`;
-      }
-
-      const rp = rightPanelRef.current;
-      if (rp) {
-        rp.style.opacity = panelOp;
-        rp.style.filter = panelBlur > 0 ? `blur(${panelBlur}px)` : "none";
-        rp.style.transform = `translateX(${panelShift}px)`;
       }
 
       /* ── letters ── */
@@ -133,41 +98,6 @@ export default function ScrollScene() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  /* ── shared panel style ── */
-  const panelStyle = {
-    background: "rgba(255, 255, 255, 0.04)",
-    backdropFilter: "blur(16px)",
-    WebkitBackdropFilter: "blur(16px)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-    borderRadius: 16,
-    padding: "28px 24px",
-    width: "min(320px, 38vw)",
-    willChange: "transform, opacity, filter",
-    pointerEvents: "none",
-  };
-
-  const titleStyle = {
-    fontFamily: "'Bebas Neue', sans-serif",
-    fontSize: "clamp(16px, 2.2vw, 22px)",
-    letterSpacing: 2,
-    color: "rgba(255, 255, 255, 0.85)",
-    marginBottom: 12,
-    textTransform: "uppercase",
-  };
-
-  const textStyle = {
-    fontFamily: "'Outfit', sans-serif",
-    fontSize: "clamp(11px, 1.4vw, 14px)",
-    lineHeight: 1.65,
-    color: "rgba(255, 255, 255, 0.45)",
-    fontWeight: 300,
-  };
-
-  const accentStyle = {
-    color: "rgba(255, 255, 255, 0.65)",
-    fontWeight: 400,
-  };
-
   return (
     <>
       <style>{`
@@ -210,19 +140,6 @@ export default function ScrollScene() {
             pointerEvents: "none",
           }}
         >
-          {/* Left panel — platforma */}
-          <div ref={leftPanelRef} style={panelStyle}>
-            <div style={titleStyle}>Platforma</div>
-            <p style={textStyle}>
-              <span style={accentStyle}>Vantage</span> to polskie centrum
-              Valorant — łączymy graczy, trenerów i twórców w jednym miejscu.
-            </p>
-            <p style={{ ...textStyle, marginTop: 10 }}>
-              VODy pro playerów, analiza gier, narzędzia do rozwoju
-              i&nbsp;community, które napędza Twój grind.
-            </p>
-          </div>
-
           {/* Center — VANTAGE letters */}
           <div
             style={{
@@ -253,20 +170,6 @@ export default function ScrollScene() {
             ))}
           </div>
 
-          {/* Right panel — trenerzy */}
-          <div ref={rightPanelRef} style={panelStyle}>
-            <div style={titleStyle}>Dla trenerów</div>
-            <p style={textStyle}>
-              Masz wiedzę i doświadczenie?{" "}
-              <span style={accentStyle}>
-                Dołącz jako trener
-              </span>{" "}
-              — buduj swoją markę, docieraj do uczniów i zarabiaj na coachingu.
-            </p>
-            <p style={{ ...textStyle, marginTop: 10 }}>
-              Dajemy Ci platformę, widoczność i narzędzia. Ty wnosisz skill.
-            </p>
-          </div>
         </div>
 
         {/* Scroll hint */}
