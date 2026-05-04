@@ -65,14 +65,32 @@ export default function Dashboard() {
 
   /* ── Auth ── */
   useEffect(() => {
+    const KEY = "vntg_session";
+
+    function saveToken(t) {
+      try { localStorage.setItem(KEY, t); } catch {}
+      const exp = new Date(Date.now() + 30 * 864e5).toUTCString();
+      document.cookie = `${KEY}=${t};expires=${exp};path=/;SameSite=Lax`;
+    }
+
+    function readToken() {
+      try { const t = localStorage.getItem(KEY); if (t) return t; } catch {}
+      const m = document.cookie.match(new RegExp(`(?:^|; )${KEY}=([^;]*)`));
+      return m ? m[1] : null;
+    }
+
+    function clearToken() {
+      try { localStorage.removeItem(KEY); } catch {}
+      document.cookie = `${KEY}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    }
+
     const tokenFromUrl = searchParams.get("token");
     if (tokenFromUrl) {
-      try { localStorage.setItem("vntg_session", tokenFromUrl); } catch {}
+      saveToken(tokenFromUrl);
       window.history.replaceState({}, "", "/dashboard");
     }
 
-    let token = tokenFromUrl;
-    try { token = token || localStorage.getItem("vntg_session"); } catch {}
+    const token = tokenFromUrl || readToken();
     if (!token) { navigate("/"); return; }
 
     fetch(`${API_URL}/api/me`, {
@@ -81,7 +99,7 @@ export default function Dashboard() {
       .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
       .then((data) => { setUser(data); setLoading(false); })
       .catch(() => {
-        try { localStorage.removeItem("vntg_session"); } catch {}
+        clearToken();
         navigate("/");
       });
   }, []);
@@ -228,6 +246,7 @@ export default function Dashboard() {
 
   function handleLogout() {
     try { localStorage.removeItem("vntg_session"); } catch {}
+    document.cookie = "vntg_session=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
     navigate("/");
   }
 
