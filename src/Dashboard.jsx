@@ -209,9 +209,15 @@ export default function Dashboard() {
       return true;
     };
 
+    const alphaNumLast = (a, b) => {
+      const aDigit = /^\d/.test(a), bDigit = /^\d/.test(b);
+      if (aDigit !== bDigit) return aDigit ? 1 : -1;
+      return a.localeCompare(b);
+    };
+
     let agents = [...new Set(allVideoMeta.filter((v) => match(v, "agent")).map((v) => v.agent))].sort();
     const maps    = [...new Set(allVideoMeta.filter((v) => match(v, "map")).map((v) => v.map))].sort();
-    const players = [...new Set(allVideoMeta.filter((v) => match(v, "player")).map((v) => v.player))].sort();
+    const players = [...new Set(allVideoMeta.filter((v) => match(v, "player")).map((v) => v.player))].sort(alphaNumLast);
 
     /* apply role filter on agents */
     if (filterRole) agents = agents.filter((a) => AGENT_ROLES[a] === filterRole);
@@ -238,6 +244,26 @@ export default function Dashboard() {
       setFilterAgent("");
     }
   }
+
+  /* auto-set role when agent is picked */
+  function handleAgentChange(agent) {
+    setFilterAgent(agent);
+    if (agent) setFilterRole(AGENT_ROLES[agent] || "");
+  }
+
+  /*
+   * When only role is active (no agent), display is driven locally from
+   * allVideoMeta so the API doesn't need a role param it doesn't support.
+   */
+  const localVideos = useMemo(() => {
+    if (!filterRole || filterAgent) return null;
+    return allVideoMeta.filter((v) => {
+      if (AGENT_ROLES[v.agent] !== filterRole) return false;
+      if (filterMap    && v.map    !== filterMap)    return false;
+      if (filterPlayer && v.player !== filterPlayer) return false;
+      return true;
+    });
+  }, [filterRole, filterAgent, filterMap, filterPlayer, allVideoMeta]);
 
   if (loading) {
     return (
@@ -308,7 +334,7 @@ export default function Dashboard() {
                 <div style={styles.filterGroup}>
                   <Select
                     value={filterAgent}
-                    onChange={setFilterAgent}
+                    onChange={handleAgentChange}
                     placeholder="Agent"
                     options={dynamicOptions.agents}
                   />
@@ -329,6 +355,7 @@ export default function Dashboard() {
                     onChange={handleRoleChange}
                     placeholder="Rola"
                     options={ROLES}
+                    locked={!!filterAgent}
                   />
                   {(filterRole || filterAgent || filterMap || filterPlayer) && (
                     <button onClick={clearFilters} style={styles.clearBtn}>✕ Wyczyść</button>
@@ -336,12 +363,26 @@ export default function Dashboard() {
                   <InfoTooltip text="Some options are hidden because there are no videos with that combination." />
                 </div>
                 <span style={styles.resultCount}>
-                  {total ?? videos.length} {(total ?? videos.length) === 1 ? "VOD" : "VODów"}
+                  {localVideos ? localVideos.length : (total ?? videos.length)}{" "}
+                  {(localVideos ? localVideos.length : (total ?? videos.length)) === 1 ? "VOD" : "VODów"}
                 </span>
               </div>
 
               {/* Grid */}
-              {videosLoading ? (
+              {localVideos ? (
+                /* ── Local mode: role filter without agent ── */
+                localVideos.length === 0 ? (
+                  <div style={styles.emptyState}>
+                    <span style={styles.emptyIcon}>🎬</span>
+                    <p style={styles.emptyTitle}>Brak VODów</p>
+                    <p style={styles.emptyDesc}>Zmień filtry żeby zobaczyć więcej wyników.</p>
+                  </div>
+                ) : (
+                  <div style={styles.grid}>
+                    {localVideos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} />)}
+                  </div>
+                )
+              ) : videosLoading ? (
                 <div style={styles.gridSkeleton}>
                   {[...Array(6)].map((_, i) => <div key={i} style={styles.skeletonCard} />)}
                 </div>
@@ -494,7 +535,7 @@ function InfoTooltip({ text }) {
 }
 
 /* ── Select component ── */
-function Select({ value, onChange, placeholder, options }) {
+function Select({ value, onChange, placeholder, options, locked = false }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
@@ -541,17 +582,19 @@ function Select({ value, onChange, placeholder, options }) {
         type="text"
         value={open ? query : value}
         placeholder={placeholder}
-        onFocus={() => setOpen(true)}
-        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-        onKeyDown={onKeyDown}
+        onFocus={() => { if (!locked) setOpen(true); }}
+        onChange={(e) => { if (!locked) { setQuery(e.target.value); setOpen(true); } }}
+        onKeyDown={locked ? undefined : onKeyDown}
+        readOnly={locked}
         autoComplete="off"
         style={{
           ...styles.select,
           color: value || query ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)",
           paddingRight: value ? 32 : 14,
+          cursor: locked ? "default" : "pointer",
         }}
       />
-      {value && (
+      {value && !locked && (
         <button
           type="button"
           onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onChange(""); setQuery(""); setOpen(false); }}
@@ -561,6 +604,7 @@ function Select({ value, onChange, placeholder, options }) {
           ✕
         </button>
       )}
+      {locked && <span style={styles.lockIcon}>🔒</span>}
       {open && (
         <div style={styles.selectDropdown}>
           {filtered.length === 0 ? (
@@ -619,6 +663,7 @@ const styles = {
   selectWrap: { position: "relative", display: "inline-flex", alignItems: "center" },
   select: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 12px", fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: "pointer", outline: "none", minWidth: 90, appearance: "none", WebkitAppearance: "none" },
   selectClearBtn: { position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 18, height: 18, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.75)", fontSize: 10, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontFamily: "inherit", transition: "all 0.15s", zIndex: 2 },
+  lockIcon: { position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 10, opacity: 0.2, pointerEvents: "none", userSelect: "none" },
   selectDropdown: { position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, minWidth: 160, maxHeight: 240, overflowY: "auto", background: "#111117", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: 4, zIndex: 20, boxShadow: "0 10px 30px rgba(0,0,0,0.5)" },
   selectOption: { padding: "7px 10px", fontSize: 13, color: "rgba(255,255,255,0.85)", borderRadius: 5, cursor: "pointer", fontFamily: "'Outfit', sans-serif", userSelect: "none" },
   selectOptionActive: { background: "rgba(59,130,246,0.15)", color: "#fff" },
