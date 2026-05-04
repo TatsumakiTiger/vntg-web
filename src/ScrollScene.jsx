@@ -17,7 +17,9 @@ export default function ScrollScene() {
 
   // If already logged in, skip to dashboard
   useEffect(() => {
-    if (localStorage.getItem("vntg_session")) {
+    const fromStorage = localStorage.getItem("vntg_session");
+    const fromCookie = document.cookie.match(/(?:^|; )vntg_session=([^;]*)/)?.[1];
+    if (fromStorage || fromCookie) {
       navigate("/dashboard");
     }
   }, []);
