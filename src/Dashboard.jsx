@@ -93,12 +93,21 @@ export default function Dashboard() {
       .catch(() => {});
   }, []);
 
-  /* ── Fetch all video metadata once for local cross-filter index ── */
+  /* ── Fetch ALL video metadata for local cross-filter index (paginated) ── */
   useEffect(() => {
-    fetch(`${API_URL}/api/videos?limit=2000&offset=0`)
-      .then((r) => r.json())
-      .then((data) => setAllVideoMeta(data))
-      .catch(() => {});
+    async function fetchAllMeta() {
+      try {
+        const { total } = await fetch(`${API_URL}/api/videos/count`).then((r) => r.json());
+        const pages = Math.ceil(total / 100);
+        const results = await Promise.all(
+          Array.from({ length: pages }, (_, i) =>
+            fetch(`${API_URL}/api/videos?limit=100&offset=${i * 100}`).then((r) => r.json())
+          )
+        );
+        setAllVideoMeta(results.flat());
+      } catch {}
+    }
+    fetchAllMeta();
   }, []);
 
   /* ── Fetch first page + total count when filters change ── */
@@ -298,12 +307,6 @@ export default function Dashboard() {
               <div style={styles.filtersRow}>
                 <div style={styles.filterGroup}>
                   <Select
-                    value={filterRole}
-                    onChange={handleRoleChange}
-                    placeholder="Rola"
-                    options={ROLES}
-                  />
-                  <Select
                     value={filterAgent}
                     onChange={setFilterAgent}
                     placeholder="Agent"
@@ -320,6 +323,12 @@ export default function Dashboard() {
                     onChange={setFilterPlayer}
                     placeholder="Gracz"
                     options={dynamicOptions.players}
+                  />
+                  <Select
+                    value={filterRole}
+                    onChange={handleRoleChange}
+                    placeholder="Rola"
+                    options={ROLES}
                   />
                   {(filterRole || filterAgent || filterMap || filterPlayer) && (
                     <button onClick={clearFilters} style={styles.clearBtn}>✕ Wyczyść</button>
@@ -608,7 +617,7 @@ const styles = {
   infoTooltip: { position: "absolute", left: "50%", bottom: "calc(100% + 8px)", transform: "translateX(-50%)", background: "#18181f", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "rgba(255,255,255,0.6)", whiteSpace: "nowrap", pointerEvents: "none", zIndex: 30, boxShadow: "0 8px 24px rgba(0,0,0,0.5)", lineHeight: 1.5 },
 
   selectWrap: { position: "relative", display: "inline-flex", alignItems: "center" },
-  select: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 14px", fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: "pointer", outline: "none", minWidth: 120, appearance: "none", WebkitAppearance: "none" },
+  select: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 12px", fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: "pointer", outline: "none", minWidth: 90, appearance: "none", WebkitAppearance: "none" },
   selectClearBtn: { position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 18, height: 18, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.75)", fontSize: 10, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontFamily: "inherit", transition: "all 0.15s", zIndex: 2 },
   selectDropdown: { position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, minWidth: 160, maxHeight: 240, overflowY: "auto", background: "#111117", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: 4, zIndex: 20, boxShadow: "0 10px 30px rgba(0,0,0,0.5)" },
   selectOption: { padding: "7px 10px", fontSize: 13, color: "rgba(255,255,255,0.85)", borderRadius: 5, cursor: "pointer", fontFamily: "'Outfit', sans-serif", userSelect: "none" },
