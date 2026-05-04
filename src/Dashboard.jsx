@@ -269,7 +269,7 @@ export default function Dashboard() {
     return (
       <div style={styles.loadingScreen}>
         <div style={styles.loadingPulse} />
-        <span style={styles.loadingText}>Ładowanie...</span>
+        <span style={styles.loadingText}>Loading...</span>
       </div>
     );
   }
@@ -304,7 +304,7 @@ export default function Dashboard() {
           <div style={styles.headerRight}>
             <img src={avatarUrl} alt="" style={styles.headerAvatar} />
             <span style={styles.headerName}>{displayName}</span>
-            <button onClick={handleLogout} style={styles.logoutBtn}>Wyloguj</button>
+            <button onClick={handleLogout} style={styles.logoutBtn}>Log out</button>
           </div>
         </header>
 
@@ -312,7 +312,7 @@ export default function Dashboard() {
         <nav style={styles.tabBar}>
           {[
             { id: "proview", label: "ProView" },
-            { id: "profile", label: "Profil" },
+            { id: "profile", label: "Profile" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -341,30 +341,30 @@ export default function Dashboard() {
                   <Select
                     value={filterMap}
                     onChange={setFilterMap}
-                    placeholder="Mapa"
+                    placeholder="Map"
                     options={dynamicOptions.maps}
                   />
                   <Select
                     value={filterPlayer}
                     onChange={setFilterPlayer}
-                    placeholder="Gracz"
+                    placeholder="Player"
                     options={dynamicOptions.players}
                   />
                   <Select
                     value={filterRole}
                     onChange={handleRoleChange}
-                    placeholder="Rola"
+                    placeholder="Role"
                     options={ROLES}
                     locked={!!filterAgent}
                   />
                   {(filterRole || filterAgent || filterMap || filterPlayer) && (
-                    <button onClick={clearFilters} style={styles.clearBtn}>✕ Wyczyść</button>
+                    <button onClick={clearFilters} style={styles.clearBtn}>✕ Clear</button>
                   )}
                   <InfoTooltip text="Some options are hidden because there are no videos with that combination." />
                 </div>
                 <span style={styles.resultCount}>
                   {localVideos ? localVideos.length : (total ?? videos.length)}{" "}
-                  {(localVideos ? localVideos.length : (total ?? videos.length)) === 1 ? "VOD" : "VODów"}
+                  {(localVideos ? localVideos.length : (total ?? videos.length)) === 1 ? "VOD" : "VODs"}
                 </span>
               </div>
 
@@ -374,8 +374,8 @@ export default function Dashboard() {
                 localVideos.length === 0 ? (
                   <div style={styles.emptyState}>
                     <span style={styles.emptyIcon}>🎬</span>
-                    <p style={styles.emptyTitle}>Brak VODów</p>
-                    <p style={styles.emptyDesc}>Zmień filtry żeby zobaczyć więcej wyników.</p>
+                    <p style={styles.emptyTitle}>No VODs found</p>
+                    <p style={styles.emptyDesc}>Change filters to see more results.</p>
                   </div>
                 ) : (
                   <div style={styles.grid}>
@@ -389,11 +389,11 @@ export default function Dashboard() {
               ) : videos.length === 0 ? (
                 <div style={styles.emptyState}>
                   <span style={styles.emptyIcon}>🎬</span>
-                  <p style={styles.emptyTitle}>Brak VODów</p>
+                  <p style={styles.emptyTitle}>No VODs found</p>
                   <p style={styles.emptyDesc}>
                     {(filterAgent || filterMap || filterPlayer || filterRole)
-                      ? "Zmień filtry żeby zobaczyć więcej wyników."
-                      : "VODy pojawią się tu automatycznie gdy VMonitor je wykryje."}
+                      ? "Change filters to see more results."
+                      : "VODs will appear here automatically when VMonitor detects them."}
                   </p>
                 </div>
               ) : (
@@ -404,12 +404,12 @@ export default function Dashboard() {
                   <div ref={sentinelRef} style={{ height: 1 }} />
                   {loadingMore && (
                     <div style={{ textAlign: "center", padding: "24px 0", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
-                      Ładuję kolejne VOD-y…
+                      Loading more VODs…
                     </div>
                   )}
                   {!hasMore && videos.length > 0 && (
                     <div style={{ textAlign: "center", padding: "24px 0", color: "rgba(255,255,255,0.25)", fontSize: 12 }}>
-                      To już wszystko.
+                      That's all.
                     </div>
                   )}
                 </>
@@ -502,7 +502,7 @@ function ProfileCard({ user }) {
       <div style={styles.profileDivider} />
       <div style={styles.profileFields}>
         <ProfileField label="Email" value={user.email || "—"} />
-        <ProfileField label="Dołączył" value={user.created_at ? new Date(user.created_at).toLocaleDateString("pl-PL") : "—"} />
+        <ProfileField label="Joined" value={user.created_at ? new Date(user.created_at).toLocaleDateString("en-US") : "—"} />
       </div>
     </div>
   );
@@ -599,7 +599,7 @@ function Select({ value, onChange, placeholder, options, locked = false }) {
           type="button"
           onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onChange(""); setQuery(""); setOpen(false); }}
           style={styles.selectClearBtn}
-          aria-label={`Wyczyść filtr ${placeholder}`}
+          aria-label={`Clear ${placeholder} filter`}
         >
           ✕
         </button>
@@ -608,7 +608,7 @@ function Select({ value, onChange, placeholder, options, locked = false }) {
       {open && (
         <div style={styles.selectDropdown}>
           {filtered.length === 0 ? (
-            <div style={{ ...styles.selectOption, color: "rgba(255,255,255,0.3)", cursor: "default" }}>Brak wyników</div>
+            <div style={{ ...styles.selectOption, color: "rgba(255,255,255,0.3)", cursor: "default" }}>No results</div>
           ) : (
             filtered.map((opt, i) => (
               <div

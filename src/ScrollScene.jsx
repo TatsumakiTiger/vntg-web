@@ -195,7 +195,7 @@ export default function ScrollScene() {
             whiteSpace: "nowrap",
           }}
         >
-          <span>Zescrolluj aby się zalogować</span>
+          <span>Scroll down to log in</span>
           <svg
             width="10"
             height="16"
