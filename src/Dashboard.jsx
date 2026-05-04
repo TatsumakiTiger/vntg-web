@@ -234,7 +234,7 @@ export default function Dashboard() {
     setFilterAgent("");
     setFilterMap("");
     setFilterPlayer("");
-    setFilterRole("");
+    /* role is NOT cleared here — it can only be cleared via its own ✕ */
   }
 
   /* clear agent when role changes and current agent doesn't match */
