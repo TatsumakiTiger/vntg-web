@@ -61,6 +61,7 @@ export default function Dashboard() {
   const fetchSeq = useRef(0);
   const loadMoreRef = useRef(() => {});
   const observerRef = useRef(null);
+  const roleAutoSet = useRef(false);
 
   /* ── Auth ── */
   useEffect(() => {
@@ -237,18 +238,25 @@ export default function Dashboard() {
     /* role is NOT cleared here — it can only be cleared via its own ✕ */
   }
 
-  /* clear agent when role changes and current agent doesn't match */
+  /* manual role pick — not auto-set, so it persists independently */
   function handleRoleChange(role) {
     setFilterRole(role);
+    roleAutoSet.current = false;
     if (role && filterAgent && AGENT_ROLES[filterAgent] !== role) {
       setFilterAgent("");
     }
   }
 
-  /* auto-set role when agent is picked */
+  /* auto-set role when agent is picked, clear it when agent is cleared */
   function handleAgentChange(agent) {
     setFilterAgent(agent);
-    if (agent) setFilterRole(AGENT_ROLES[agent] || "");
+    if (agent) {
+      setFilterRole(AGENT_ROLES[agent] || "");
+      roleAutoSet.current = true;
+    } else if (roleAutoSet.current) {
+      setFilterRole("");
+      roleAutoSet.current = false;
+    }
   }
 
   /*
