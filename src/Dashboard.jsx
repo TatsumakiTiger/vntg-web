@@ -51,8 +51,10 @@ export default function Dashboard() {
   const [filterMap, setFilterMap] = useState("");
   const [filterPlayer, setFilterPlayer] = useState("");
   const [filterRole, setFilterRole] = useState("");
-  const [baseOptions, setBaseOptions] = useState({ agents: [], maps: [], players: [] });
+  /* base options for instant initial render (from /api/videos/filters) */
   const [filterOptions, setFilterOptions] = useState({ agents: [], maps: [], players: [] });
+  /* full video meta for local cross-filtering */
+  const [allVideoMeta, setAllVideoMeta] = useState([]);
   const [activeTab, setActiveTab] = useState("proview");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -83,61 +85,21 @@ export default function Dashboard() {
       });
   }, []);
 
-  /* ── Load all base filter options once ── */
+  /* ── Base filter options (fast, populates dropdowns instantly) ── */
   useEffect(() => {
     fetch(`${API_URL}/api/videos/filters`)
       .then((r) => r.json())
-      .then((data) => { setBaseOptions(data); setFilterOptions(data); })
+      .then((data) => setFilterOptions(data))
       .catch(() => {});
   }, []);
 
-  /* ── Update contextual filter options when active filters change ── */
+  /* ── Fetch all video metadata once for local cross-filter index ── */
   useEffect(() => {
-    if (!filterAgent && !filterMap && !filterPlayer) {
-      if (baseOptions.agents.length || baseOptions.maps.length || baseOptions.players.length) {
-        setFilterOptions(baseOptions);
-      }
-      return;
-    }
-
-    // agents dropdown: filtered by map+player (not by agent itself)
-    const agentParams = new URLSearchParams();
-    if (filterMap) agentParams.set("map", filterMap);
-    if (filterPlayer) agentParams.set("player", filterPlayer);
-
-    // maps dropdown: filtered by agent+player (not by map itself)
-    const mapParams = new URLSearchParams();
-    if (filterAgent) mapParams.set("agent", filterAgent);
-    if (filterPlayer) mapParams.set("player", filterPlayer);
-
-    // players dropdown: filtered by both agent and map
-    const playerParams = new URLSearchParams();
-    if (filterAgent) playerParams.set("agent", filterAgent);
-    if (filterMap) playerParams.set("map", filterMap);
-
-    const p1 = agentParams.toString()
-      ? fetch(`${API_URL}/api/videos/filters?${agentParams}`).then((r) => r.json()).then((d) => d.agents || baseOptions.agents)
-      : Promise.resolve(baseOptions.agents);
-
-    const p2 = mapParams.toString()
-      ? fetch(`${API_URL}/api/videos/filters?${mapParams}`).then((r) => r.json()).then((d) => d.maps || baseOptions.maps)
-      : Promise.resolve(baseOptions.maps);
-
-    const p3 = playerParams.toString()
-      ? fetch(`${API_URL}/api/videos/filters?${playerParams}`).then((r) => r.json()).then((d) => d.players || baseOptions.players)
-      : Promise.resolve(baseOptions.players);
-
-    Promise.all([p1, p2, p3])
-      .then(([agents, maps, players]) => setFilterOptions({ agents, maps, players }))
+    fetch(`${API_URL}/api/videos?limit=2000&offset=0`)
+      .then((r) => r.json())
+      .then((data) => setAllVideoMeta(data))
       .catch(() => {});
-  }, [filterAgent, filterMap, filterPlayer, baseOptions]);
-
-  /* ── Clear agent selection when role changes and agent doesn't match ── */
-  useEffect(() => {
-    if (filterRole && filterAgent && AGENT_ROLES[filterAgent] !== filterRole) {
-      setFilterAgent("");
-    }
-  }, [filterRole]);
+  }, []);
 
   /* ── Fetch first page + total count when filters change ── */
   useEffect(() => {
@@ -221,16 +183,32 @@ export default function Dashboard() {
     observerRef.current.observe(node);
   };
 
-  /* ── Computed agent list: contextual options filtered by selected role ── */
-  const agentsForRole = useMemo(() => {
-    return filterRole
-      ? filterOptions.agents.filter((a) => AGENT_ROLES[a] === filterRole)
-      : filterOptions.agents;
-  }, [filterOptions.agents, filterRole]);
+  /*
+   * ── Dynamic cross-filter options ──
+   * Built from the local video meta index so only valid combos are shown.
+   * Each dimension is computed WITHOUT filtering on itself
+   * (so you can still change agent while agent is selected, etc).
+   * Falls back to base filterOptions while allVideoMeta is loading.
+   */
+  const dynamicOptions = useMemo(() => {
+    if (!allVideoMeta.length) return filterOptions;
 
-  const maps = filterOptions.maps;
-  const players = filterOptions.players;
-  const filtered = videos;
+    const match = (v, excludeKey) => {
+      if (excludeKey !== "agent" && filterAgent && v.agent !== filterAgent) return false;
+      if (excludeKey !== "map"   && filterMap   && v.map   !== filterMap)   return false;
+      if (excludeKey !== "player"&& filterPlayer && v.player !== filterPlayer) return false;
+      return true;
+    };
+
+    let agents = [...new Set(allVideoMeta.filter((v) => match(v, "agent")).map((v) => v.agent))].sort();
+    const maps    = [...new Set(allVideoMeta.filter((v) => match(v, "map")).map((v) => v.map))].sort();
+    const players = [...new Set(allVideoMeta.filter((v) => match(v, "player")).map((v) => v.player))].sort();
+
+    /* apply role filter on agents */
+    if (filterRole) agents = agents.filter((a) => AGENT_ROLES[a] === filterRole);
+
+    return { agents, maps, players };
+  }, [allVideoMeta, filterAgent, filterMap, filterPlayer, filterRole, filterOptions]);
 
   function handleLogout() {
     try { localStorage.removeItem("vntg_session"); } catch {}
@@ -242,6 +220,14 @@ export default function Dashboard() {
     setFilterMap("");
     setFilterPlayer("");
     setFilterRole("");
+  }
+
+  /* clear agent when role changes and current agent doesn't match */
+  function handleRoleChange(role) {
+    setFilterRole(role);
+    if (role && filterAgent && AGENT_ROLES[filterAgent] !== role) {
+      setFilterAgent("");
+    }
   }
 
   if (loading) {
@@ -272,7 +258,6 @@ export default function Dashboard() {
       `}</style>
 
       <div style={styles.root}>
-        {/* ── Ambient glow ── */}
         <div style={styles.ambientGlow} />
 
         {/* ── Top bar ── */}
@@ -284,9 +269,7 @@ export default function Dashboard() {
           <div style={styles.headerRight}>
             <img src={avatarUrl} alt="" style={styles.headerAvatar} />
             <span style={styles.headerName}>{displayName}</span>
-            <button onClick={handleLogout} style={styles.logoutBtn}>
-              Wyloguj
-            </button>
+            <button onClick={handleLogout} style={styles.logoutBtn}>Wyloguj</button>
           </div>
         </header>
 
@@ -299,10 +282,7 @@ export default function Dashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              style={{
-                ...styles.tab,
-                ...(activeTab === tab.id ? styles.tabActive : {}),
-              }}
+              style={{ ...styles.tab, ...(activeTab === tab.id ? styles.tabActive : {}) }}
             >
               {tab.label}
               {activeTab === tab.id && <div style={styles.tabIndicator} />}
@@ -317,65 +297,46 @@ export default function Dashboard() {
               {/* Filters */}
               <div style={styles.filtersRow}>
                 <div style={styles.filterGroup}>
-                  {/* Role pills */}
-                  <div style={styles.rolePillsWrap}>
-                    {ROLES.map((role) => {
-                      const active = filterRole === role;
-                      const color = ROLE_COLORS[role];
-                      return (
-                        <button
-                          key={role}
-                          onClick={() => setFilterRole(active ? "" : role)}
-                          style={{
-                            ...styles.rolePill,
-                            ...(active
-                              ? { background: `${color}22`, color, borderColor: `${color}55` }
-                              : {}),
-                          }}
-                        >
-                          {role}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <Select
+                    value={filterRole}
+                    onChange={handleRoleChange}
+                    placeholder="Rola"
+                    options={ROLES}
+                  />
                   <Select
                     value={filterAgent}
                     onChange={setFilterAgent}
                     placeholder="Agent"
-                    options={agentsForRole}
+                    options={dynamicOptions.agents}
                   />
                   <Select
                     value={filterMap}
                     onChange={setFilterMap}
                     placeholder="Mapa"
-                    options={maps}
+                    options={dynamicOptions.maps}
                   />
                   <Select
                     value={filterPlayer}
                     onChange={setFilterPlayer}
                     placeholder="Gracz"
-                    options={players}
+                    options={dynamicOptions.players}
                   />
-                  {(filterAgent || filterMap || filterPlayer || filterRole) && (
-                    <button onClick={clearFilters} style={styles.clearBtn}>
-                      ✕ Wyczyść
-                    </button>
+                  {(filterRole || filterAgent || filterMap || filterPlayer) && (
+                    <button onClick={clearFilters} style={styles.clearBtn}>✕ Wyczyść</button>
                   )}
-                  <InfoTooltip text="Some agents and maps are hidden because there are no videos with that combination." />
+                  <InfoTooltip text="Some options are hidden because there are no videos with that combination." />
                 </div>
                 <span style={styles.resultCount}>
-                  {total ?? filtered.length} {(total ?? filtered.length) === 1 ? "VOD" : "VODów"}
+                  {total ?? videos.length} {(total ?? videos.length) === 1 ? "VOD" : "VODów"}
                 </span>
               </div>
 
               {/* Grid */}
               {videosLoading ? (
                 <div style={styles.gridSkeleton}>
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} style={styles.skeletonCard} />
-                  ))}
+                  {[...Array(6)].map((_, i) => <div key={i} style={styles.skeletonCard} />)}
                 </div>
-              ) : filtered.length === 0 ? (
+              ) : videos.length === 0 ? (
                 <div style={styles.emptyState}>
                   <span style={styles.emptyIcon}>🎬</span>
                   <p style={styles.emptyTitle}>Brak VODów</p>
@@ -388,9 +349,7 @@ export default function Dashboard() {
               ) : (
                 <>
                   <div style={styles.grid}>
-                    {filtered.map((v, i) => (
-                      <VodCard key={v.video_id} video={v} index={i} />
-                    ))}
+                    {videos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} />)}
                   </div>
                   <div ref={sentinelRef} style={{ height: 1 }} />
                   {loadingMore && (
@@ -398,7 +357,7 @@ export default function Dashboard() {
                       Ładuję kolejne VOD-y…
                     </div>
                   )}
-                  {!hasMore && filtered.length > 0 && (
+                  {!hasMore && videos.length > 0 && (
                     <div style={{ textAlign: "center", padding: "24px 0", color: "rgba(255,255,255,0.25)", fontSize: 12 }}>
                       To już wszystko.
                     </div>
@@ -452,38 +411,17 @@ function VodCard({ video, index }) {
           background: `linear-gradient(135deg, ${agentColor}14 0%, rgba(10,10,15,0.95) 100%)`,
         }}
       >
-        <span
-          style={{
-            fontSize: 32,
-            fontWeight: 800,
-            letterSpacing: 2,
-            textTransform: "uppercase",
-            color: "#fff",
-            lineHeight: 1,
-          }}
-        >
+        <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "#fff", lineHeight: 1 }}>
           {video.map}
         </span>
-        <span
-          style={{
-            fontSize: 16,
-            fontWeight: 600,
-            letterSpacing: 1,
-            textTransform: "uppercase",
-            color: agentColor,
-            lineHeight: 1,
-          }}
-        >
+        <span style={{ fontSize: 16, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", color: agentColor, lineHeight: 1 }}>
           {video.agent}
         </span>
       </div>
-
       <div style={styles.cardBody}>
         <div style={styles.cardTop}>
           <span style={styles.playerName}>{video.player}</span>
-          <span style={{ ...styles.rolePillCard, background: `${roleColor}18`, color: roleColor }}>
-            {role}
-          </span>
+          <span style={{ ...styles.rolePill, background: `${roleColor}18`, color: roleColor }}>{role}</span>
         </div>
         {video.channel && (
           <div style={styles.cardMeta}>
@@ -499,7 +437,6 @@ function VodCard({ video, index }) {
 function ProfileCard({ user }) {
   const displayName = user.global_name || user.username;
   const avatarUrl = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1a1a2e&color=fff&size=128&bold=true&format=svg`;
-
   return (
     <div style={styles.profileCard}>
       <div style={styles.profileHeader}>
@@ -542,11 +479,7 @@ function InfoTooltip({ text }) {
       >
         ⓘ
       </span>
-      {visible && (
-        <div style={styles.infoTooltip}>
-          {text}
-        </div>
-      )}
+      {visible && <div style={styles.infoTooltip}>{text}</div>}
     </div>
   );
 }
@@ -576,9 +509,7 @@ function Select({ value, onChange, placeholder, options }) {
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  useEffect(() => {
-    setHighlight(0);
-  }, [query, open]);
+  useEffect(() => { setHighlight(0); }, [query, open]);
 
   function choose(opt) {
     onChange(opt);
@@ -588,31 +519,18 @@ function Select({ value, onChange, placeholder, options }) {
   }
 
   function onKeyDown(e) {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setOpen(true);
-      setHighlight((h) => Math.min(h + 1, filtered.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlight((h) => Math.max(h - 1, 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (filtered[highlight]) choose(filtered[highlight]);
-    } else if (e.key === "Escape") {
-      setOpen(false);
-      setQuery("");
-      inputRef.current?.blur();
-    }
+    if (e.key === "ArrowDown") { e.preventDefault(); setOpen(true); setHighlight((h) => Math.min(h + 1, filtered.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setHighlight((h) => Math.max(h - 1, 0)); }
+    else if (e.key === "Enter") { e.preventDefault(); if (filtered[highlight]) choose(filtered[highlight]); }
+    else if (e.key === "Escape") { setOpen(false); setQuery(""); inputRef.current?.blur(); }
   }
-
-  const displayValue = open ? query : value;
 
   return (
     <div ref={wrapRef} style={styles.selectWrap}>
       <input
         ref={inputRef}
         type="text"
-        value={displayValue}
+        value={open ? query : value}
         placeholder={placeholder}
         onFocus={() => setOpen(true)}
         onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
@@ -627,16 +545,9 @@ function Select({ value, onChange, placeholder, options }) {
       {value && (
         <button
           type="button"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onChange("");
-            setQuery("");
-            setOpen(false);
-          }}
+          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onChange(""); setQuery(""); setOpen(false); }}
           style={styles.selectClearBtn}
           aria-label={`Wyczyść filtr ${placeholder}`}
-          title="Wyczyść"
         >
           ✕
         </button>
@@ -644,9 +555,7 @@ function Select({ value, onChange, placeholder, options }) {
       {open && (
         <div style={styles.selectDropdown}>
           {filtered.length === 0 ? (
-            <div style={{ ...styles.selectOption, color: "rgba(255,255,255,0.3)", cursor: "default" }}>
-              Brak wyników
-            </div>
+            <div style={{ ...styles.selectOption, color: "rgba(255,255,255,0.3)", cursor: "default" }}>Brak wyników</div>
           ) : (
             filtered.map((opt, i) => (
               <div
@@ -673,465 +582,73 @@ function Select({ value, onChange, placeholder, options }) {
    Styles
    ══════════════════════════════════════════ */
 const styles = {
-  root: {
-    minHeight: "100vh",
-    background: "#050507",
-    fontFamily: "'Outfit', sans-serif",
-    color: "#fff",
-    position: "relative",
-    overflow: "hidden",
-  },
-  ambientGlow: {
-    position: "fixed",
-    top: -200,
-    right: -200,
-    width: 600,
-    height: 600,
-    borderRadius: "50%",
-    background: "radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)",
-    pointerEvents: "none",
-    animation: "glow 8s ease-in-out infinite",
-  },
+  root: { minHeight: "100vh", background: "#050507", fontFamily: "'Outfit', sans-serif", color: "#fff", position: "relative", overflow: "hidden" },
+  ambientGlow: { position: "fixed", top: -200, right: -200, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)", pointerEvents: "none", animation: "glow 8s ease-in-out infinite" },
 
-  /* Header */
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "16px 32px",
-    borderBottom: "1px solid rgba(255,255,255,0.06)",
-    backdropFilter: "blur(20px)",
-    position: "sticky",
-    top: 0,
-    zIndex: 50,
-    background: "rgba(5,5,7,0.85)",
-  },
+  header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 32px", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 50, background: "rgba(5,5,7,0.85)" },
   headerLeft: { display: "flex", alignItems: "center", gap: 10 },
-  logo: {
-    fontFamily: "'Bebas Neue', sans-serif",
-    fontSize: 28,
-    letterSpacing: 4,
-    color: "#fff",
-  },
-  logoBeta: {
-    fontSize: 9,
-    fontWeight: 600,
-    letterSpacing: 2,
-    color: "rgba(59,130,246,0.9)",
-    background: "rgba(59,130,246,0.12)",
-    padding: "2px 8px",
-    borderRadius: 4,
-    textTransform: "uppercase",
-  },
+  logo: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 4, color: "#fff" },
+  logoBeta: { fontSize: 9, fontWeight: 600, letterSpacing: 2, color: "rgba(59,130,246,0.9)", background: "rgba(59,130,246,0.12)", padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" },
   headerRight: { display: "flex", alignItems: "center", gap: 12 },
-  headerAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: "50%",
-    border: "2px solid rgba(255,255,255,0.1)",
-    objectFit: "cover",
-    display: "block",
-  },
-  headerName: {
-    fontSize: 14,
-    fontWeight: 500,
-    color: "rgba(255,255,255,0.7)",
-  },
-  logoutBtn: {
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    color: "rgba(255,255,255,0.4)",
-    padding: "6px 14px",
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: 500,
-    cursor: "pointer",
-    transition: "all 0.2s",
-    fontFamily: "'Outfit', sans-serif",
-  },
+  headerAvatar: { width: 32, height: 32, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)", objectFit: "cover", display: "block" },
+  headerName: { fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.7)" },
+  logoutBtn: { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)", padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "all 0.2s", fontFamily: "'Outfit', sans-serif" },
 
-  /* Tabs */
-  tabBar: {
-    display: "flex",
-    gap: 4,
-    padding: "0 32px",
-    borderBottom: "1px solid rgba(255,255,255,0.06)",
-    background: "rgba(5,5,7,0.6)",
-  },
-  tab: {
-    position: "relative",
-    background: "none",
-    border: "none",
-    color: "rgba(255,255,255,0.35)",
-    padding: "14px 20px",
-    fontSize: 13,
-    fontWeight: 500,
-    cursor: "pointer",
-    fontFamily: "'Outfit', sans-serif",
-    transition: "color 0.2s",
-    letterSpacing: 0.5,
-  },
-  tabActive: {
-    color: "#fff",
-  },
-  tabIndicator: {
-    position: "absolute",
-    bottom: 0,
-    left: 20,
-    right: 20,
-    height: 2,
-    background: "linear-gradient(90deg, #3B82F6, #06B6D4)",
-    borderRadius: "2px 2px 0 0",
-  },
+  tabBar: { display: "flex", gap: 4, padding: "0 32px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(5,5,7,0.6)" },
+  tab: { position: "relative", background: "none", border: "none", color: "rgba(255,255,255,0.35)", padding: "14px 20px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "color 0.2s", letterSpacing: 0.5 },
+  tabActive: { color: "#fff" },
+  tabIndicator: { position: "absolute", bottom: 0, left: 20, right: 20, height: 2, background: "linear-gradient(90deg, #3B82F6, #06B6D4)", borderRadius: "2px 2px 0 0" },
 
-  /* Main */
-  main: {
-    padding: "28px 32px",
-    maxWidth: 1280,
-    margin: "0 auto",
-  },
+  main: { padding: "28px 32px", maxWidth: 1280, margin: "0 auto" },
 
-  /* Filters */
-  filtersRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 24,
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  filterGroup: {
-    display: "flex",
-    gap: 8,
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
+  filtersRow: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 },
+  filterGroup: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" },
 
-  /* Role pills */
-  rolePillsWrap: {
-    display: "flex",
-    gap: 4,
-    alignItems: "center",
-  },
-  rolePill: {
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    color: "rgba(255,255,255,0.35)",
-    padding: "6px 10px",
-    borderRadius: 6,
-    fontSize: 11,
-    fontWeight: 500,
-    cursor: "pointer",
-    fontFamily: "'Outfit', sans-serif",
-    letterSpacing: 0.3,
-    transition: "all 0.15s",
-    whiteSpace: "nowrap",
-  },
+  infoIcon: { fontSize: 13, color: "rgba(255,255,255,0.18)", cursor: "default", userSelect: "none", lineHeight: 1, display: "inline-flex", alignItems: "center", padding: "0 2px" },
+  infoTooltip: { position: "absolute", left: "50%", bottom: "calc(100% + 8px)", transform: "translateX(-50%)", background: "#18181f", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "rgba(255,255,255,0.6)", whiteSpace: "nowrap", pointerEvents: "none", zIndex: 30, boxShadow: "0 8px 24px rgba(0,0,0,0.5)", lineHeight: 1.5 },
 
-  /* Info icon */
-  infoIcon: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.18)",
-    cursor: "default",
-    userSelect: "none",
-    lineHeight: 1,
-    display: "inline-flex",
-    alignItems: "center",
-    padding: "0 2px",
-    transition: "color 0.15s",
-  },
-  infoTooltip: {
-    position: "absolute",
-    left: "50%",
-    bottom: "calc(100% + 8px)",
-    transform: "translateX(-50%)",
-    background: "#18181f",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 8,
-    padding: "8px 12px",
-    fontSize: 12,
-    color: "rgba(255,255,255,0.6)",
-    whiteSpace: "nowrap",
-    pointerEvents: "none",
-    zIndex: 30,
-    boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
-    lineHeight: 1.5,
-  },
+  selectWrap: { position: "relative", display: "inline-flex", alignItems: "center" },
+  select: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 14px", fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: "pointer", outline: "none", minWidth: 120, appearance: "none", WebkitAppearance: "none" },
+  selectClearBtn: { position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 18, height: 18, borderRadius: "50%", border: "none", background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.75)", fontSize: 10, lineHeight: 1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontFamily: "inherit", transition: "all 0.15s", zIndex: 2 },
+  selectDropdown: { position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, minWidth: 160, maxHeight: 240, overflowY: "auto", background: "#111117", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: 4, zIndex: 20, boxShadow: "0 10px 30px rgba(0,0,0,0.5)" },
+  selectOption: { padding: "7px 10px", fontSize: 13, color: "rgba(255,255,255,0.85)", borderRadius: 5, cursor: "pointer", fontFamily: "'Outfit', sans-serif", userSelect: "none" },
+  selectOptionActive: { background: "rgba(59,130,246,0.15)", color: "#fff" },
+  clearBtn: { background: "none", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)", padding: "8px 14px", borderRadius: 8, fontSize: 12, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "all 0.2s" },
+  resultCount: { fontSize: 13, color: "rgba(255,255,255,0.25)", fontWeight: 400 },
 
-  selectWrap: {
-    position: "relative",
-    display: "inline-flex",
-    alignItems: "center",
-  },
-  select: {
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 8,
-    padding: "8px 14px",
-    fontSize: 13,
-    fontFamily: "'Outfit', sans-serif",
-    cursor: "pointer",
-    outline: "none",
-    minWidth: 120,
-    appearance: "none",
-    WebkitAppearance: "none",
-  },
-  selectClearBtn: {
-    position: "absolute",
-    right: 8,
-    top: "50%",
-    transform: "translateY(-50%)",
-    width: 18,
-    height: 18,
-    borderRadius: "50%",
-    border: "none",
-    background: "rgba(255,255,255,0.12)",
-    color: "rgba(255,255,255,0.75)",
-    fontSize: 10,
-    lineHeight: 1,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 0,
-    fontFamily: "inherit",
-    transition: "all 0.15s",
-    zIndex: 2,
-  },
-  selectDropdown: {
-    position: "absolute",
-    top: "calc(100% + 4px)",
-    left: 0,
-    right: 0,
-    minWidth: 160,
-    maxHeight: 240,
-    overflowY: "auto",
-    background: "#111117",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 8,
-    padding: 4,
-    zIndex: 20,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
-  },
-  selectOption: {
-    padding: "7px 10px",
-    fontSize: 13,
-    color: "rgba(255,255,255,0.85)",
-    borderRadius: 5,
-    cursor: "pointer",
-    fontFamily: "'Outfit', sans-serif",
-    userSelect: "none",
-  },
-  selectOptionActive: {
-    background: "rgba(59,130,246,0.15)",
-    color: "#fff",
-  },
-  clearBtn: {
-    background: "none",
-    border: "1px solid rgba(255,255,255,0.1)",
-    color: "rgba(255,255,255,0.4)",
-    padding: "8px 14px",
-    borderRadius: 8,
-    fontSize: 12,
-    cursor: "pointer",
-    fontFamily: "'Outfit', sans-serif",
-    transition: "all 0.2s",
-  },
-  resultCount: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.25)",
-    fontWeight: 400,
-  },
+  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 },
 
-  /* Grid */
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-    gap: 16,
-  },
-
-  /* Card */
-  card: {
-    display: "block",
-    background: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.06)",
-    borderRadius: 12,
-    overflow: "hidden",
-    textDecoration: "none",
-    color: "inherit",
-    transition: "all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-    animation: "fadeUp 0.5s ease-out both",
-  },
-  thumbWrap: {
-    position: "relative",
-    aspectRatio: "16/9",
-    overflow: "hidden",
-    background: "#0a0a0f",
-  },
-  cardBody: {
-    padding: "12px 14px",
-  },
-  cardTop: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
-  playerName: {
-    fontSize: 15,
-    fontWeight: 600,
-    color: "rgba(255,255,255,0.9)",
-  },
-  rolePillCard: {
-    fontSize: 10,
-    fontWeight: 600,
-    padding: "2px 8px",
-    borderRadius: 4,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  cardMeta: {
-    display: "flex",
-    gap: 12,
-    fontSize: 12,
-    color: "rgba(255,255,255,0.3)",
-  },
+  card: { display: "block", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, overflow: "hidden", textDecoration: "none", color: "inherit", transition: "all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)", animation: "fadeUp 0.5s ease-out both" },
+  thumbWrap: { position: "relative", aspectRatio: "16/9", overflow: "hidden", background: "#0a0a0f" },
+  cardBody: { padding: "12px 14px" },
+  cardTop: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
+  playerName: { fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.9)" },
+  rolePill: { fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 4, textTransform: "uppercase", letterSpacing: 1 },
+  cardMeta: { display: "flex", gap: 12, fontSize: 12, color: "rgba(255,255,255,0.3)" },
   metaItem: {},
 
-  /* Empty state */
-  emptyState: {
-    textAlign: "center",
-    padding: "80px 20px",
-  },
+  emptyState: { textAlign: "center", padding: "80px 20px" },
   emptyIcon: { fontSize: 48 },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: 600,
-    color: "rgba(255,255,255,0.6)",
-    marginTop: 16,
-  },
-  emptyDesc: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.25)",
-    marginTop: 8,
-    maxWidth: 320,
-    marginLeft: "auto",
-    marginRight: "auto",
-    lineHeight: 1.6,
-  },
+  emptyTitle: { fontSize: 18, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginTop: 16 },
+  emptyDesc: { fontSize: 14, color: "rgba(255,255,255,0.25)", marginTop: 8, maxWidth: 320, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 },
 
-  /* Skeleton */
-  gridSkeleton: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-    gap: 16,
-  },
-  skeletonCard: {
-    height: 240,
-    borderRadius: 12,
-    background: "linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%)",
-    backgroundSize: "200% 100%",
-    animation: "shimmer 1.5s infinite",
-  },
+  gridSkeleton: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 },
+  skeletonCard: { height: 240, borderRadius: 12, background: "linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" },
 
-  /* Profile */
-  profileCard: {
-    background: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.06)",
-    borderRadius: 16,
-    padding: 32,
-    maxWidth: 520,
-  },
-  profileHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: 20,
-  },
-  profileAvatarWrap: {
-    position: "relative",
-    flexShrink: 0,
-    width: 72,
-    height: 72,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  profileAvatar: {
-    width: 72,
-    height: 72,
-    borderRadius: "50%",
-    border: "3px solid rgba(59,130,246,0.3)",
-    objectFit: "cover",
-    display: "block",
-  },
-  profileAvatarRing: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    width: 80,
-    height: 80,
-    transform: "translate(-50%, -50%)",
-    borderRadius: "50%",
-    border: "2px solid rgba(59,130,246,0.15)",
-    pointerEvents: "none",
-  },
-  profileName: {
-    fontSize: 22,
-    fontWeight: 700,
-    letterSpacing: -0.3,
-  },
-  profileUsername: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.35)",
-    marginTop: 2,
-  },
-  profileDivider: {
-    height: 1,
-    background: "rgba(255,255,255,0.06)",
-    margin: "24px 0",
-  },
-  profileFields: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-  },
-  profileField: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  profileLabel: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.3)",
-    fontWeight: 400,
-  },
-  profileValue: {
-    fontSize: 13,
-    color: "rgba(255,255,255,0.7)",
-    fontWeight: 500,
-  },
+  profileCard: { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 32, maxWidth: 520 },
+  profileHeader: { display: "flex", alignItems: "center", gap: 20 },
+  profileAvatarWrap: { position: "relative", flexShrink: 0, width: 72, height: 72, display: "flex", alignItems: "center", justifyContent: "center" },
+  profileAvatar: { width: 72, height: 72, borderRadius: "50%", border: "3px solid rgba(59,130,246,0.3)", objectFit: "cover", display: "block" },
+  profileAvatarRing: { position: "absolute", top: "50%", left: "50%", width: 80, height: 80, transform: "translate(-50%, -50%)", borderRadius: "50%", border: "2px solid rgba(59,130,246,0.15)", pointerEvents: "none" },
+  profileName: { fontSize: 22, fontWeight: 700, letterSpacing: -0.3 },
+  profileUsername: { fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 2 },
+  profileDivider: { height: 1, background: "rgba(255,255,255,0.06)", margin: "24px 0" },
+  profileFields: { display: "flex", flexDirection: "column", gap: 16 },
+  profileField: { display: "flex", justifyContent: "space-between", alignItems: "center" },
+  profileLabel: { fontSize: 13, color: "rgba(255,255,255,0.3)", fontWeight: 400 },
+  profileValue: { fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500 },
 
-  /* Loading */
-  loadingScreen: {
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#050507",
-    gap: 16,
-  },
-  loadingPulse: {
-    width: 40,
-    height: 40,
-    borderRadius: "50%",
-    border: "3px solid rgba(59,130,246,0.2)",
-    borderTopColor: "#3B82F6",
-    animation: "spin 0.8s linear infinite",
-  },
-  loadingText: {
-    fontFamily: "'Outfit', sans-serif",
-    fontSize: 14,
-    color: "rgba(255,255,255,0.3)",
-  },
+  loadingScreen: { minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#050507", gap: 16 },
+  loadingPulse: { width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(59,130,246,0.2)", borderTopColor: "#3B82F6", animation: "spin 0.8s linear infinite" },
+  loadingText: { fontFamily: "'Outfit', sans-serif", fontSize: 14, color: "rgba(255,255,255,0.3)" },
 };
