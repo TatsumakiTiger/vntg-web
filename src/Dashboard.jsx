@@ -97,7 +97,11 @@ export default function Dashboard() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
-      .then((data) => { setUser(data); setLoading(false); })
+      .then((data) => {
+        if (!data.onboarding_complete) { navigate("/onboarding"); return; }
+        setUser(data);
+        setLoading(false);
+      })
       .catch(() => {
         clearToken();
         navigate("/");
@@ -301,8 +305,8 @@ export default function Dashboard() {
     );
   }
 
-  const displayName = user.global_name || user.username;
-  const avatarUrl = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1a1a2e&color=fff&size=128&bold=true&format=svg`;
+  const displayName = user.vantage_nick || user.global_name || user.username;
+  const avatarUrl = user.custom_avatar || user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1a1a2e&color=fff&size=128&bold=true&format=svg`;
 
   return (
     <>
@@ -512,8 +516,8 @@ function VodCard({ video, index }) {
 
 /* ── Profile Card ── */
 function ProfileCard({ user }) {
-  const displayName = user.global_name || user.username;
-  const avatarUrl = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1a1a2e&color=fff&size=128&bold=true&format=svg`;
+  const displayName = user.vantage_nick || user.global_name || user.username;
+  const avatarUrl = user.custom_avatar || user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1a1a2e&color=fff&size=128&bold=true&format=svg`;
   return (
     <div style={styles.profileCard}>
       <div style={styles.profileHeader}>
