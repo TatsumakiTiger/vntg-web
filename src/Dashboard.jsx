@@ -638,38 +638,60 @@ function ProfileCard({ user }) {
   if (isEditing) {
     return (
       <div style={styles.profileCard}>
-        <div style={{ marginBottom: 24 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: "#fff" }}>Edit Profile</h3>
+        <div style={{ marginBottom: 28 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, color: "#fff" }}>Edit Profile</h3>
         </div>
 
         {/* Avatar Section */}
-        <div style={{ marginBottom: 24 }}>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 400, color: "rgba(255,255,255,0.3)", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Avatar</label>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+        <div style={{ marginBottom: 28 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 400, color: "rgba(255,255,255,0.3)", marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>Avatar</label>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={styles.profileAvatarWrap}>
               <img src={editingAvatarPreview || avatarUrl} alt="" style={styles.profileAvatar} />
               <div style={styles.profileAvatarRing} />
             </div>
-            <button onClick={() => fileRef.current?.click()} style={{ ...styles.logoutBtn, padding: "8px 14px", fontSize: 13 }}>
+            <button
+              onClick={() => fileRef.current?.click()}
+              title="PNG, JPG, or WebP — max 350KB"
+              style={{
+                ...styles.logoutBtn,
+                padding: "10px 16px",
+                fontSize: 13,
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+                background: "rgba(59,130,246,0.15)",
+                borderColor: "rgba(59,130,246,0.25)",
+                color: "rgba(255,255,255,0.85)",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = "rgba(59,130,246,0.25)";
+                e.target.style.borderColor = "rgba(59,130,246,0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = "rgba(59,130,246,0.15)";
+                e.target.style.borderColor = "rgba(59,130,246,0.25)";
+              }}
+            >
               Upload Image
             </button>
             <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
           </div>
-          <span style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>PNG, JPG, or WebP — max 350KB</span>
         </div>
 
         {/* Nick Section */}
-        <div style={{ marginBottom: 24 }}>
-          <label style={{ display: "block", fontSize: 12, fontWeight: 400, color: "rgba(255,255,255,0.3)", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Vantage Nick</label>
+        <div style={{ marginBottom: 28 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 400, color: "rgba(255,255,255,0.3)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Vantage Nick</label>
           <div style={styles.selectWrap}>
             <input
               type="text"
               value={editingNick}
               onChange={(e) => handleNickChange(e.target.value.replace(/\s/g, ""))}
-              placeholder="e.g. ProPlayer99"
+              placeholder={user.vantage_nick || "e.g. ProPlayer99"}
               maxLength={20}
               style={{
                 ...styles.select,
+                color: editingNick ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)",
                 borderColor:
                   nickStatus === "available" ? "rgba(34,197,94,0.4)" :
                   nickStatus === "taken" || nickStatus === "invalid" ? "rgba(239,68,68,0.4)" :
@@ -677,37 +699,55 @@ function ProfileCard({ user }) {
                 paddingRight: 32,
               }}
             />
-            <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 12 }}>
-              {nickStatus === "checking" && <span style={{ display: "inline-block", animation: "spin 0.8s linear infinite", lineHeight: 1 }}>⟳</span>}
-              {nickStatus === "available" && <span style={{ color: "#22C55E" }}>✓</span>}
-              {(nickStatus === "taken" || nickStatus === "invalid") && <span style={{ color: "#EF4444" }}>✗</span>}
+            <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 12, lineHeight: 1 }}>
+              {nickStatus === "checking" && <span style={{ display: "inline-block", animation: "spin 0.8s linear infinite", color: "rgba(255,255,255,0.5)" }}>⟳</span>}
+              {nickStatus === "available" && <span style={{ color: "#22C55E", fontWeight: 600 }}>✓</span>}
+              {(nickStatus === "taken" || nickStatus === "invalid") && <span style={{ color: "#EF4444", fontWeight: 600 }}>✗</span>}
             </div>
           </div>
-          {nickError && <p style={{ fontSize: 12, color: "#EF4444", marginTop: 6 }}>{nickError}</p>}
-          {nickStatus === "available" && editingNick !== user.vantage_nick && <p style={{ fontSize: 12, color: "#22C55E", marginTop: 6 }}>✓ This nick is available.</p>}
+          {nickError && <p style={{ fontSize: 12, color: "#EF4444", marginTop: 8 }}>{nickError}</p>}
+          {nickStatus === "available" && editingNick !== user.vantage_nick && <p style={{ fontSize: 12, color: "#22C55E", marginTop: 8 }}>✓ This nick is available.</p>}
         </div>
 
         {/* Error Message */}
-        {error && <p style={{ fontSize: 12, color: "#EF4444", marginBottom: 16 }}>{error}</p>}
+        {error && <p style={{ fontSize: 12, color: "#EF4444", marginBottom: 20, padding: "8px 12px", background: "rgba(239,68,68,0.08)", borderRadius: 6, border: "1px solid rgba(239,68,68,0.15)" }}>{error}</p>}
 
         {/* Buttons */}
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <button
             onClick={handleSave}
             disabled={saving || (!editingAvatar && (editingNick === user.vantage_nick || nickStatus !== "available"))}
             style={{
-              ...styles.logoutBtn,
-              opacity: saving || (!editingAvatar && (editingNick === user.vantage_nick || nickStatus !== "available")) ? 0.4 : 1,
+              padding: "10px 16px",
+              fontSize: 13,
+              fontWeight: 500,
+              background: saving || (!editingAvatar && (editingNick === user.vantage_nick || nickStatus !== "available")) ? "rgba(59,130,246,0.1)" : "rgba(59,130,246,0.2)",
+              border: "1px solid rgba(59,130,246,0.25)",
+              color: saving || (!editingAvatar && (editingNick === user.vantage_nick || nickStatus !== "available")) ? "rgba(255,255,255,0.4)" : "#fff",
+              borderRadius: 8,
               cursor: saving || (!editingAvatar && (editingNick === user.vantage_nick || nickStatus !== "available")) ? "not-allowed" : "pointer",
-              flex: 1,
-              background: "rgba(59,130,246,0.2)",
-              borderColor: "rgba(59,130,246,0.3)",
-              color: "#fff",
+              fontFamily: "'Outfit', sans-serif",
+              transition: "all 0.2s",
             }}
           >
             {saving ? "Saving…" : "Save Changes"}
           </button>
-          <button onClick={handleCancel} disabled={saving} style={{ ...styles.clearBtn, flex: 1 }}>
+          <button
+            onClick={handleCancel}
+            disabled={saving}
+            style={{
+              padding: "10px 16px",
+              fontSize: 13,
+              fontWeight: 500,
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: saving ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.6)",
+              borderRadius: 8,
+              cursor: saving ? "not-allowed" : "pointer",
+              fontFamily: "'Outfit', sans-serif",
+              transition: "all 0.2s",
+            }}
+          >
             Cancel
           </button>
         </div>
