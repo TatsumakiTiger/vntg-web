@@ -258,7 +258,8 @@ export default function Dashboard() {
     setFilterAgent("");
     setFilterMap("");
     setFilterPlayer("");
-    /* role is NOT cleared here — it can only be cleared via its own ✕ */
+    setFilterRole("");
+    roleAutoSet.current = false;
   }
 
   /* manual role pick — not auto-set, so it persists independently */
