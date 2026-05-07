@@ -5,6 +5,14 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   "https://vntg-api-production.up.railway.app";
 
+const KEY = "vntg_session";
+
+function readToken() {
+  try { const t = localStorage.getItem(KEY); if (t) return t; } catch {}
+  const m = document.cookie.match(new RegExp(`(?:^|; )${KEY}=([^;]*)`));
+  return m ? m[1] : null;
+}
+
 /* ── Agent icon colors for visual flair ── */
 const AGENT_COLORS = {
   Jett: "#89CFF0", Reyna: "#C084FC", Raze: "#FB923C", Phoenix: "#F97316",
@@ -519,6 +527,194 @@ function VodCard({ video, index }) {
 function ProfileCard({ user }) {
   const displayName = user.vantage_nick || user.global_name || user.username;
   const avatarUrl = user.custom_avatar || user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1a1a2e&color=fff&size=128&bold=true&format=svg`;
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingNick, setEditingNick] = useState(user.vantage_nick || "");
+  const [editingAvatar, setEditingAvatar] = useState(null);
+  const [editingAvatarPreview, setEditingAvatarPreview] = useState(null);
+  const [nickStatus, setNickStatus] = useState(null);
+  const [nickError, setNickError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const fileRef = useRef(null);
+  const debounceRef = useRef(null);
+
+  const handleNickChange = (newNick) => {
+    setEditingNick(newNick);
+    setNickError("");
+    setNickStatus(null);
+
+    if (!newNick || newNick.length < 3) {
+      setNickStatus(null);
+      return;
+    }
+    if (!/^[A-Za-z0-9_]{3,20}$/.test(newNick)) {
+      setNickStatus("invalid");
+      setNickError("3-20 characters, letters/numbers/underscore only.");
+      return;
+    }
+
+    setNickStatus("checking");
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetch(`${API_URL}/api/check-nick/${encodeURIComponent(newNick)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.available) {
+            setNickStatus("available");
+            setNickError("");
+          } else {
+            setNickStatus("taken");
+            setNickError(data.reason || "Not available.");
+          }
+        })
+        .catch(() => {
+          setNickStatus(null);
+          setNickError("Could not check availability.");
+        });
+    }, 400);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 350000) {
+      setError("Image too large. Max 350KB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setEditingAvatarPreview(reader.result);
+      setEditingAvatar(reader.result);
+      setError("");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError("");
+
+    try {
+      if (editingAvatar) {
+        await fetch(`${API_URL}/api/onboarding/avatar`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${readToken()}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ avatar: editingAvatar }),
+        });
+      }
+
+      if (editingNick !== user.vantage_nick) {
+        const res = await fetch(`${API_URL}/api/onboarding/nick`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${readToken()}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ nick: editingNick }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Failed to update nick");
+        }
+      }
+
+      setIsEditing(false);
+      window.location.reload();
+    } catch (err) {
+      setError(err.message || "Error saving profile. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditingNick(user.vantage_nick || "");
+    setEditingAvatar(null);
+    setEditingAvatarPreview(null);
+    setNickStatus(null);
+    setNickError("");
+    setError("");
+  };
+
+  if (isEditing) {
+    return (
+      <div style={styles.profileCard}>
+        <div style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: "#fff" }}>Edit Profile</h3>
+        </div>
+
+        {/* Avatar Section */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 400, color: "rgba(255,255,255,0.3)", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Avatar</label>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+            <div style={styles.profileAvatarWrap}>
+              <img src={editingAvatarPreview || avatarUrl} alt="" style={styles.profileAvatar} />
+              <div style={styles.profileAvatarRing} />
+            </div>
+            <button onClick={() => fileRef.current?.click()} style={{ ...styles.logoutBtn, padding: "8px 14px", fontSize: 13 }}>
+              Upload Image
+            </button>
+            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} style={{ display: "none" }} />
+          </div>
+          <span style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 8 }}>PNG, JPG, or WebP — max 350KB</span>
+        </div>
+
+        {/* Nick Section */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: "block", fontSize: 12, fontWeight: 400, color: "rgba(255,255,255,0.3)", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Vantage Nick</label>
+          <div style={styles.selectWrap}>
+            <input
+              type="text"
+              value={editingNick}
+              onChange={(e) => handleNickChange(e.target.value.replace(/\s/g, ""))}
+              placeholder="e.g. ProPlayer99"
+              maxLength={20}
+              style={{
+                ...styles.select,
+                borderColor:
+                  nickStatus === "available" ? "rgba(34,197,94,0.4)" :
+                  nickStatus === "taken" || nickStatus === "invalid" ? "rgba(239,68,68,0.4)" :
+                  "rgba(255,255,255,0.08)",
+                paddingRight: 32,
+              }}
+            />
+            <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 12 }}>
+              {nickStatus === "checking" && <span style={{ display: "inline-block", animation: "spin 0.8s linear infinite", lineHeight: 1 }}>⟳</span>}
+              {nickStatus === "available" && <span style={{ color: "#22C55E" }}>✓</span>}
+              {(nickStatus === "taken" || nickStatus === "invalid") && <span style={{ color: "#EF4444" }}>✗</span>}
+            </div>
+          </div>
+          {nickError && <p style={{ fontSize: 12, color: "#EF4444", marginTop: 6 }}>{nickError}</p>}
+          {nickStatus === "available" && editingNick !== user.vantage_nick && <p style={{ fontSize: 12, color: "#22C55E", marginTop: 6 }}>✓ This nick is available.</p>}
+        </div>
+
+        {/* Error Message */}
+        {error && <p style={{ fontSize: 12, color: "#EF4444", marginBottom: 16 }}>{error}</p>}
+
+        {/* Buttons */}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={handleSave}
+            disabled={saving || (!editingAvatar && (editingNick === user.vantage_nick || nickStatus !== "available"))}
+            style={{
+              ...styles.logoutBtn,
+              opacity: saving || (!editingAvatar && (editingNick === user.vantage_nick || nickStatus !== "available")) ? 0.4 : 1,
+              cursor: saving || (!editingAvatar && (editingNick === user.vantage_nick || nickStatus !== "available")) ? "not-allowed" : "pointer",
+              flex: 1,
+              background: "rgba(59,130,246,0.2)",
+              borderColor: "rgba(59,130,246,0.3)",
+              color: "#fff",
+            }}
+          >
+            {saving ? "Saving…" : "Save Changes"}
+          </button>
+          <button onClick={handleCancel} disabled={saving} style={{ ...styles.clearBtn, flex: 1 }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.profileCard}>
       <div style={styles.profileHeader}>
@@ -526,10 +722,13 @@ function ProfileCard({ user }) {
           <img src={avatarUrl} alt="" style={styles.profileAvatar} />
           <div style={styles.profileAvatarRing} />
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <h2 style={styles.profileName}>{displayName}</h2>
           <p style={styles.profileUsername}>@{user.username}</p>
         </div>
+        <button onClick={() => setIsEditing(true)} style={{ ...styles.logoutBtn, fontSize: 12 }}>
+          Edit
+        </button>
       </div>
       <div style={styles.profileDivider} />
       <div style={styles.profileFields}>
