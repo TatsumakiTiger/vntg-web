@@ -8,11 +8,14 @@ const API_URL =
 const LETTERS = ["V", "A", "N", "T", "A", "G", "E"];
 const AGENTS = ["JETT", "REYNA", "RAZE", "PHOENIX", "NEON", "YORU", "ISO", "SAGE", "SKYE", "KILLJOY", "CYPHER", "CHAMBER", "DEADLOCK", "GEKKO", "FADE", "SOVA", "BREACH", "KAYO", "TEJO", "OMEN", "BRIMSTONE", "VIPER", "ASTRA", "HARBOR", "CLOVE", "MIKS", "VYSE", "WAYLAY", "VETO"];
 
-/* Particle system */
+/* Enhanced particle system: brain network + floating crystals + ambient particles */
 function createParticles(canvas) {
   const ctx = canvas.getContext("2d");
   let particles = [];
+  let brainNodes = [];
+  let crystals = [];
   let mouse = { x: -1000, y: -1000 };
+  let scrollY = 0;
   let raf;
 
   function resize() {
@@ -20,27 +23,147 @@ function createParticles(canvas) {
     canvas.height = window.innerHeight;
   }
 
-  function init() {
-    particles = [];
-    const count = Math.floor((canvas.width * canvas.height) / 15000);
+  function initBrain() {
+    brainNodes = [];
+    const cx = canvas.width / 2;
+    const cy = canvas.height * 0.42;
+    const scale = Math.min(canvas.width * 0.28, canvas.height * 0.22, 220);
+
+    for (let side = -1; side <= 1; side += 2) {
+      const count = canvas.width < 600 ? 40 : 65;
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const r = 0.35 + Math.random() * 0.65;
+        let x = cx + side * scale * 0.38 + Math.cos(angle) * scale * r * 0.9;
+        let y = cy + Math.sin(angle) * scale * r * 0.7;
+        const n = Math.sin(x * 0.018 + y * 0.014) * scale * 0.04;
+        x += n; y += n;
+        if (Math.abs(x - cx) < scale * 0.06 && y < cy + scale * 0.15) continue;
+        brainNodes.push({
+          x, y, baseX: x, baseY: y,
+          r: 0.8 + Math.random() * 1.4,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.4 + Math.random() * 1.2,
+          isAccent: Math.random() < 0.12,
+        });
+      }
+    }
+  }
+
+  function initCrystals() {
+    crystals = [];
+    const count = canvas.width < 600 ? 6 : 14;
     for (let i = 0; i < count; i++) {
-      particles.push({
+      crystals.push({
         x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.25,
-        vy: (Math.random() - 0.5) * 0.25,
-        r: Math.random() * 1.2 + 0.3,
-        o: Math.random() * 0.25 + 0.05,
-        vario: Math.random() * 0.15,
+        baseY: Math.random() * canvas.height,
+        y: 0,
+        size: 6 + Math.random() * 18,
+        rot: Math.random() * Math.PI * 2,
+        rotSpd: (Math.random() - 0.5) * 0.008,
+        floatSpd: 0.3 + Math.random() * 0.8,
+        phase: Math.random() * Math.PI * 2,
+        depth: 0.2 + Math.random() * 0.8,
+        opacity: 0.1 + Math.random() * 0.18,
+        isGold: Math.random() < 0.25,
       });
     }
   }
 
+  function init() {
+    particles = [];
+    const count = Math.floor((canvas.width * canvas.height) / 18000);
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2,
+        r: Math.random() * 1 + 0.3,
+        o: Math.random() * 0.18 + 0.03,
+      });
+    }
+    initBrain();
+    initCrystals();
+  }
+
+  function drawCrystal(x, y, size, rot, opacity, isGold) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.globalAlpha = opacity;
+    const c = isGold ? "201,168,76" : "139,154,232";
+    ctx.beginPath();
+    ctx.moveTo(0, -size);
+    ctx.lineTo(size * 0.6, 0);
+    ctx.lineTo(0, size * 0.8);
+    ctx.lineTo(-size * 0.6, 0);
+    ctx.closePath();
+    ctx.fillStyle = `rgba(${c},0.05)`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${c},0.35)`;
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-size * 0.6, 0);
+    ctx.lineTo(size * 0.6, 0);
+    ctx.strokeStyle = `rgba(${c},0.12)`;
+    ctx.lineWidth = 0.4;
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function draw() {
+    const t = Date.now() * 0.001;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, "rgba(88,101,242,0)");
-    gradient.addColorStop(1, "rgba(6,182,212,0)");
+
+    const brainFade = Math.max(0, 1 - scrollY / (canvas.height * 0.7));
+
+    if (brainFade > 0.01) {
+      const maxDist = Math.min(canvas.width, canvas.height) * 0.11;
+      for (let i = 0; i < brainNodes.length; i++) {
+        const a = brainNodes[i];
+        a.x = a.baseX + Math.sin(t * a.speed + a.phase) * 1.8;
+        a.y = a.baseY + Math.cos(t * a.speed * 0.7 + a.phase) * 1.2;
+        for (let j = i + 1; j < brainNodes.length; j++) {
+          const b = brainNodes[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < maxDist) {
+            const lo = 0.07 * (1 - d / maxDist) * brainFade;
+            const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+            const md = Math.sqrt((mouse.x - mx) ** 2 + (mouse.y - my) ** 2);
+            const mg = md < 200 ? (1 - md / 200) * 0.18 : 0;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = `rgba(88,101,242,${lo + mg})`;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        }
+      }
+
+      for (const n of brainNodes) {
+        const md = Math.sqrt((mouse.x - n.x) ** 2 + (mouse.y - n.y) ** 2);
+        const glow = md < 180 ? (1 - md / 180) * 0.5 : 0;
+        const pulse = Math.sin(t * 1.8 + n.phase) * 0.15 + 0.85;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, (n.r * pulse + glow * 2), 0, Math.PI * 2);
+        if (n.isAccent) {
+          ctx.fillStyle = `rgba(201,168,76,${(0.45 + glow) * pulse * brainFade})`;
+        } else {
+          ctx.fillStyle = `rgba(139,154,232,${(0.3 + glow) * pulse * brainFade})`;
+        }
+        ctx.fill();
+      }
+    }
+
+    for (const c of crystals) {
+      c.rot += c.rotSpd;
+      c.y = c.baseY + Math.sin(t * c.floatSpd + c.phase) * 12 - scrollY * c.depth * 0.25;
+      drawCrystal(c.x, c.y, c.size, c.rot, c.opacity, c.isGold);
+    }
 
     for (const p of particles) {
       p.x += p.vx;
@@ -50,33 +173,32 @@ function createParticles(canvas) {
       if (p.y < 0) p.y = canvas.height;
       if (p.y > canvas.height) p.y = 0;
 
-      const dx = mouse.x - p.x;
-      const dy = mouse.y - p.y;
+      const dx = mouse.x - p.x, dy = mouse.y - p.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const glow = dist < 250 ? (1 - dist / 250) * 0.7 : 0;
+      const glow = dist < 220 ? (1 - dist / 220) * 0.5 : 0;
 
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r + glow * 2, 0, Math.PI * 2);
-      const hue = 270 + (Math.sin(Date.now() * 0.0003 + p.o) * 30);
-      ctx.fillStyle = `hsla(${hue}, 80%, 55%, ${p.o + glow * 0.5})`;
+      ctx.arc(p.x, p.y, p.r + glow * 1.5, 0, Math.PI * 2);
+      const hue = 250 + Math.sin(t * 0.3 + p.o * 10) * 25;
+      ctx.fillStyle = `hsla(${hue}, 75%, 55%, ${p.o + glow * 0.35})`;
       ctx.fill();
     }
 
     for (let i = 0; i < particles.length; i++) {
       const a = particles[i];
       const da = Math.sqrt((mouse.x - a.x) ** 2 + (mouse.y - a.y) ** 2);
-      if (da > 200) continue;
+      if (da > 180) continue;
       for (let j = i + 1; j < particles.length; j++) {
         const b = particles[j];
         const db = Math.sqrt((mouse.x - b.x) ** 2 + (mouse.y - b.y) ** 2);
-        if (db > 200) continue;
+        if (db > 180) continue;
         const d = Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
-        if (d < 140) {
+        if (d < 120) {
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = `rgba(88,101,242,${0.1 * (1 - d / 140)})`;
-          ctx.lineWidth = 0.8;
+          ctx.strokeStyle = `rgba(88,101,242,${0.08 * (1 - d / 120)})`;
+          ctx.lineWidth = 0.6;
           ctx.stroke();
         }
       }
@@ -84,21 +206,21 @@ function createParticles(canvas) {
     raf = requestAnimationFrame(draw);
   }
 
-  function onMouse(e) {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-  }
+  function onMouse(e) { mouse.x = e.clientX; mouse.y = e.clientY; }
+  function onScroll() { scrollY = window.scrollY; }
 
   resize();
   init();
   draw();
   window.addEventListener("resize", () => { resize(); init(); });
   window.addEventListener("mousemove", onMouse);
+  window.addEventListener("scroll", onScroll, { passive: true });
 
   return () => {
     cancelAnimationFrame(raf);
     window.removeEventListener("resize", resize);
     window.removeEventListener("mousemove", onMouse);
+    window.removeEventListener("scroll", onScroll);
   };
 }
 
@@ -262,7 +384,7 @@ export default function ScrollScene() {
             </button>
           ) : (
             <button onClick={handleLogin} style={s.navBtn}>
-              <DiscordIcon /> Sign in
+              Sign in
             </button>
           )}
         </div>
@@ -306,7 +428,7 @@ export default function ScrollScene() {
                 </p>
                 <div style={s.ctaGroup}>
                   <button onClick={handleLogin} style={s.ctaBtn}>
-                    <DiscordIcon /> Get Started Free
+                    Get Started Free
                     <span style={s.ctaArrow}>→</span>
                   </button>
                 </div>
@@ -327,7 +449,14 @@ export default function ScrollScene() {
 
         {!user && (
           <>
-            <section style={s.section}>
+            <section style={{ ...s.section, position: "relative", overflow: "hidden" }}>
+              <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0.03, pointerEvents: "none" }} viewBox="0 0 1200 600" preserveAspectRatio="none">
+                <polyline points="0,400 80,380 160,390 280,320 400,340 520,260 640,290 760,230 880,250 1000,180 1100,200 1200,140" fill="none" stroke="#5865F2" strokeWidth="2" />
+                <polyline points="0,460 120,450 260,430 400,400 550,370 700,380 860,330 1000,310 1200,270" fill="none" stroke="#06B6D4" strokeWidth="1.5" />
+                <circle cx="520" cy="260" r="4" fill="#5865F2" opacity="0.6" />
+                <circle cx="1000" cy="180" r="4" fill="#5865F2" opacity="0.6" />
+                <circle cx="1200" cy="140" r="3" fill="#C9A84C" opacity="0.7" />
+              </svg>
               <FadeSection>
                 <h2 style={s.sectionTitle}>Why VANTAGE?</h2>
                 <p style={s.sectionSub}>The complete toolkit for competitive Valorant players.</p>
@@ -383,7 +512,7 @@ export default function ScrollScene() {
                 <h2 style={s.ctaTitle}>Ready to Rank Up?</h2>
                 <p style={s.ctaSub}>Join the community. Learn from the pros. Dominate the competition.</p>
                 <button onClick={handleLogin} style={{ ...s.ctaBtn, marginTop: 40 }}>
-                  <DiscordIcon /> Sign in with Discord
+                  Join Now
                   <span style={s.ctaArrow}>→</span>
                 </button>
               </FadeSection>
