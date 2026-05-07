@@ -6,8 +6,9 @@ const API_URL =
   "https://vntg-api-production.up.railway.app";
 
 const LETTERS = ["V", "A", "N", "T", "A", "G", "E"];
+const AGENTS = ["JETT", "REYNA", "RAZE", "PHOENIX", "NEON", "YORU", "ISO", "SAGE", "SKYE", "KILLJOY", "CYPHER", "CHAMBER", "DEADLOCK", "GEKKO", "FADE", "SOVA", "BREACH", "KAYO", "TEJO", "OMEN", "BRIMSTONE", "VIPER", "ASTRA", "HARBOR", "CLOVE", "MIKS", "VYSE", "WAYLAY", "VETO"];
 
-/* ── Particle system ── */
+/* Particle system */
 function createParticles(canvas) {
   const ctx = canvas.getContext("2d");
   let particles = [];
@@ -21,21 +22,26 @@ function createParticles(canvas) {
 
   function init() {
     particles = [];
-    const count = Math.floor((canvas.width * canvas.height) / 12000);
+    const count = Math.floor((canvas.width * canvas.height) / 15000);
     for (let i = 0; i < count; i++) {
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        r: Math.random() * 1.5 + 0.5,
-        o: Math.random() * 0.3 + 0.05,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        r: Math.random() * 1.2 + 0.3,
+        o: Math.random() * 0.25 + 0.05,
+        vario: Math.random() * 0.15,
       });
     }
   }
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, "rgba(88,101,242,0)");
+    gradient.addColorStop(1, "rgba(6,182,212,0)");
+
     for (const p of particles) {
       p.x += p.vx;
       p.y += p.vy;
@@ -47,30 +53,30 @@ function createParticles(canvas) {
       const dx = mouse.x - p.x;
       const dy = mouse.y - p.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const glow = dist < 200 ? (1 - dist / 200) * 0.5 : 0;
+      const glow = dist < 250 ? (1 - dist / 250) * 0.7 : 0;
 
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r + glow * 2, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(88,101,242,${p.o + glow})`;
+      const hue = 270 + (Math.sin(Date.now() * 0.0003 + p.o) * 30);
+      ctx.fillStyle = `hsla(${hue}, 80%, 55%, ${p.o + glow * 0.5})`;
       ctx.fill();
     }
 
-    // connection lines near mouse
     for (let i = 0; i < particles.length; i++) {
       const a = particles[i];
       const da = Math.sqrt((mouse.x - a.x) ** 2 + (mouse.y - a.y) ** 2);
-      if (da > 180) continue;
+      if (da > 200) continue;
       for (let j = i + 1; j < particles.length; j++) {
         const b = particles[j];
         const db = Math.sqrt((mouse.x - b.x) ** 2 + (mouse.y - b.y) ** 2);
-        if (db > 180) continue;
+        if (db > 200) continue;
         const d = Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
-        if (d < 120) {
+        if (d < 140) {
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = `rgba(88,101,242,${0.08 * (1 - d / 120)})`;
-          ctx.lineWidth = 0.5;
+          ctx.strokeStyle = `rgba(88,101,242,${0.1 * (1 - d / 140)})`;
+          ctx.lineWidth = 0.8;
           ctx.stroke();
         }
       }
@@ -96,7 +102,6 @@ function createParticles(canvas) {
   };
 }
 
-/* ── Section fade-in observer ── */
 function useFadeIn() {
   const ref = useRef(null);
   useEffect(() => {
@@ -104,7 +109,7 @@ function useFadeIn() {
     if (!el) return;
     const obs = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) { el.classList.add("visible"); obs.unobserve(el); } },
-      { threshold: 0.15 }
+      { threshold: 0.1 }
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -115,17 +120,12 @@ function useFadeIn() {
 function FadeSection({ children, style, delay = 0 }) {
   const ref = useFadeIn();
   return (
-    <div
-      ref={ref}
-      className="fade-section"
-      style={{ ...style, transitionDelay: `${delay}ms` }}
-    >
+    <div ref={ref} className="fade-section" style={{ ...style, transitionDelay: `${delay}ms` }}>
       {children}
     </div>
   );
 }
 
-/* ── Feature card ── */
 function FeatureCard({ icon, title, desc, delay }) {
   const [hovered, setHovered] = useState(false);
   const ref = useFadeIn();
@@ -138,9 +138,11 @@ function FeatureCard({ icon, title, desc, delay }) {
       style={{
         ...s.featureCard,
         transitionDelay: `${delay}ms`,
-        transform: hovered ? "translateY(-6px) scale(1.02)" : "translateY(0) scale(1)",
-        borderColor: hovered ? "rgba(88,101,242,0.3)" : "rgba(255,255,255,0.06)",
-        boxShadow: hovered ? "0 12px 40px rgba(88,101,242,0.1)" : "none",
+        transform: hovered ? "translateY(-12px) scale(1.03)" : "translateY(0) scale(1)",
+        borderColor: hovered ? "rgba(88,101,242,0.5)" : "rgba(255,255,255,0.08)",
+        background: hovered ? "rgba(88,101,242,0.08)" : "rgba(88,101,242,0.03)",
+        boxShadow: hovered ? "0 20px 60px rgba(88,101,242,0.15), inset 0 1px 1px rgba(255,255,255,0.1)" : "0 8px 32px rgba(0,0,0,0.2)",
+        backdropFilter: "blur(20px)",
       }}
     >
       <span style={s.featureIcon}>{icon}</span>
@@ -150,9 +152,25 @@ function FeatureCard({ icon, title, desc, delay }) {
   );
 }
 
-/* ══════════════════════════════════════════
-   Main Component
-   ══════════════════════════════════════════ */
+function AgentGrid() {
+  const ref = useFadeIn();
+  return (
+    <div ref={ref} className="fade-section" style={s.agentGridWrap}>
+      <div style={s.agentBadge}>
+        <span style={s.agentBadgeText}>AGENTS COVERED</span>
+        <span style={s.agentBadgeValue}>ALL</span>
+      </div>
+      <div style={s.agentGrid}>
+        {AGENTS.map((agent, i) => (
+          <div key={i} style={s.agentTag} title={agent}>
+            {agent.slice(0, 3)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ScrollScene() {
   const canvasRef = useRef(null);
   const navigate = useNavigate();
@@ -161,7 +179,6 @@ export default function ScrollScene() {
   const [authChecked, setAuthChecked] = useState(false);
   const [heroVisible, setHeroVisible] = useState(false);
 
-  // Token handling + auth check
   useEffect(() => {
     const KEY = "vntg_session";
 
@@ -196,13 +213,11 @@ export default function ScrollScene() {
       .catch(() => { setAuthChecked(true); });
   }, []);
 
-  // Particles
   useEffect(() => {
     if (!canvasRef.current) return;
     return createParticles(canvasRef.current);
   }, []);
 
-  // Hero entrance animation
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 100);
     return () => clearTimeout(t);
@@ -233,15 +248,11 @@ export default function ScrollScene() {
   return (
     <>
       <style>{GLOBAL_CSS}</style>
-
-      {/* Particle canvas */}
       <canvas ref={canvasRef} style={s.canvas} />
-
-      {/* Gradient orbs */}
       <div style={s.orbTop} />
       <div style={s.orbBottom} />
+      <div style={s.orbMid} />
 
-      {/* ── Navbar ── */}
       <nav style={s.navbar}>
         <span style={s.navLogo}>VANTAGE</span>
         <div style={s.navRight}>
@@ -257,18 +268,14 @@ export default function ScrollScene() {
         </div>
       </nav>
 
-      {/* ── Scroll container ── */}
       <div style={s.scrollWrap}>
-
-        {/* ═══ HERO ═══ */}
         <section style={s.hero}>
           <div style={{
             ...s.heroInner,
             opacity: heroVisible ? 1 : 0,
-            transform: heroVisible ? "translateY(0)" : "translateY(30px)",
+            transform: heroVisible ? "translateY(0)" : "translateY(40px)",
           }}>
             {user ? (
-              /* ── Logged-in hero ── */
               <>
                 <div style={s.welcomeLetters}>
                   {LETTERS.map((l, i) => (
@@ -278,33 +285,35 @@ export default function ScrollScene() {
                 <h1 style={s.welcomeHeading}>
                   WELCOME, <span style={s.nickHighlight}>{displayNick}</span>
                 </h1>
-                <p style={s.heroSub}>Your competitive edge awaits.</p>
+                <p style={s.heroSub}>Your competitive edge awaits. Dive back in.</p>
                 <button onClick={handleContinue} style={s.ctaBtn}>
                   {user.onboarding_complete ? "Go to Dashboard" : "Complete Setup"}
                   <span style={s.ctaArrow}>→</span>
                 </button>
               </>
             ) : (
-              /* ── Guest hero ── */
               <>
                 <div style={s.welcomeLetters}>
                   {LETTERS.map((l, i) => (
                     <span key={i} style={{ ...s.heroLetter, animationDelay: `${i * 0.08}s` }}>{l}</span>
                   ))}
                 </div>
-                <h1 style={s.heroHeading}>Your Competitive Edge</h1>
+                <h1 style={s.heroHeading}>
+                  Master <span style={s.gradientText}>Valorant</span> Through <span style={s.gradientText2}>Pro Play</span>
+                </h1>
                 <p style={s.heroSub}>
-                  Pro player VODs, analytics, and insights — all in one place.
+                  Watch professional players dominate with every agent. Filter by playstyle, map, or player. Learn from the best.
                 </p>
-                <button onClick={handleLogin} style={s.ctaBtn}>
-                  <DiscordIcon /> Get Started
-                  <span style={s.ctaArrow}>→</span>
-                </button>
+                <div style={s.ctaGroup}>
+                  <button onClick={handleLogin} style={s.ctaBtn}>
+                    <DiscordIcon /> Get Started Free
+                    <span style={s.ctaArrow}>→</span>
+                  </button>
+                </div>
               </>
             )}
           </div>
 
-          {/* Scroll indicator */}
           {!user && (
             <div style={s.scrollHint}>
               <span>Scroll to explore</span>
@@ -316,61 +325,74 @@ export default function ScrollScene() {
           )}
         </section>
 
-        {/* ═══ FEATURES (only for guests) ═══ */}
         {!user && (
           <>
             <section style={s.section}>
               <FadeSection>
-                <h2 style={s.sectionTitle}>Everything You Need</h2>
-                <p style={s.sectionSub}>Built for players who want to improve.</p>
+                <h2 style={s.sectionTitle}>Why VANTAGE?</h2>
+                <p style={s.sectionSub}>The complete toolkit for competitive Valorant players.</p>
               </FadeSection>
               <div style={s.featuresGrid}>
                 <FeatureCard
-                  icon="🎬"
-                  title="Pro VODs"
-                  desc="Access professional player POV recordings from top-tier matches, organized by agent, map, and player."
+                  icon="🎯"
+                  title="All Agents Covered"
+                  desc="Every single agent. Every playstyle. From Duelists to Controllers — master them all with pro-level demonstrations."
                   delay={0}
                 />
                 <FeatureCard
-                  icon="🔍"
-                  title="Smart Filters"
-                  desc="Find exactly what you need. Filter by agent, map, player, or role — combinations update in real time."
+                  icon="⚡"
+                  title="Real-Time Filtering"
+                  desc="Find the exact content you need. Filter by agent, map, player, or role. See results instantly."
                   delay={100}
                 />
                 <FeatureCard
-                  icon="⚡"
-                  title="Instant Access"
-                  desc="One-click Discord sign in. No forms, no passwords. Your account links directly to your Discord profile."
+                  icon="🚀"
+                  title="Professional Insights"
+                  desc="Learn strategies from players at the highest level. Study positioning, utility usage, and game sense."
                   delay={200}
                 />
               </div>
             </section>
 
-            {/* ═══ STATS ═══ */}
+            <section style={s.agentSection}>
+              <FadeSection>
+                <h2 style={s.sectionTitle}>Complete Coverage</h2>
+              </FadeSection>
+              <AgentGrid />
+            </section>
+
             <section style={s.section}>
               <div style={s.statsRow}>
-                <StatBlock number="500+" label="Pro VODs" delay={0} />
-                <StatBlock number="20+" label="Agents Covered" delay={100} />
-                <StatBlock number="Free" label="Always" delay={200} />
+                <FadeSection style={s.statBlock} delay={0}>
+                  <span style={s.statNumber}>500+</span>
+                  <span style={s.statLabel}>Pro VODs</span>
+                </FadeSection>
+                <FadeSection style={s.statBlock} delay={100}>
+                  <span style={s.statNumber}>29</span>
+                  <span style={s.statLabel}>Agents</span>
+                </FadeSection>
+                <FadeSection style={s.statBlock} delay={200}>
+                  <span style={s.statNumber}>Free</span>
+                  <span style={s.statLabel}>Forever</span>
+                </FadeSection>
               </div>
             </section>
 
-            {/* ═══ CTA ═══ */}
             <section style={{ ...s.section, ...s.ctaSection }}>
               <FadeSection style={{ textAlign: "center" }}>
-                <h2 style={s.ctaTitle}>Ready to Level Up?</h2>
-                <p style={s.ctaSub}>Join the community and start learning from the pros.</p>
-                <button onClick={handleLogin} style={{ ...s.ctaBtn, marginTop: 32 }}>
+                <h2 style={s.ctaTitle}>Ready to Rank Up?</h2>
+                <p style={s.ctaSub}>Join the community. Learn from the pros. Dominate the competition.</p>
+                <button onClick={handleLogin} style={{ ...s.ctaBtn, marginTop: 40 }}>
                   <DiscordIcon /> Sign in with Discord
                   <span style={s.ctaArrow}>→</span>
                 </button>
               </FadeSection>
             </section>
 
-            {/* Footer */}
             <footer style={s.footer}>
               <span style={s.footerLogo}>VANTAGE</span>
-              <span style={s.footerText}>Built for the competitive community.</span>
+              <span style={s.footerDivider}>•</span>
+              <span style={s.footerText}>Built for the competitive Valorant community.</span>
             </footer>
           </>
         )}
@@ -379,18 +401,6 @@ export default function ScrollScene() {
   );
 }
 
-/* ── Stat block ── */
-function StatBlock({ number, label, delay }) {
-  const ref = useFadeIn();
-  return (
-    <div ref={ref} className="fade-section" style={{ ...s.statBlock, transitionDelay: `${delay}ms` }}>
-      <span style={s.statNumber}>{number}</span>
-      <span style={s.statLabel}>{label}</span>
-    </div>
-  );
-}
-
-/* ── Discord icon ── */
 function DiscordIcon() {
   return (
     <svg width="18" height="14" viewBox="0 0 71 55" fill="currentColor" style={{ marginRight: 8, flexShrink: 0 }}>
@@ -399,22 +409,20 @@ function DiscordIcon() {
   );
 }
 
-/* ══════════════════════════════════════════
-   Global CSS
-   ══════════════════════════════════════════ */
 const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@200;300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { background: #050507; overflow-x: hidden; }
-  ::-webkit-scrollbar { width: 6px; }
+  body { background: #050507; overflow-x: hidden; position: relative; }
+  ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb { background: rgba(88,101,242,0.4); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(88,101,242,0.6); }
 
   .fade-section {
     opacity: 0;
-    transform: translateY(28px);
-    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(32px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .fade-section.visible {
     opacity: 1;
@@ -422,88 +430,93 @@ const GLOBAL_CSS = `
   }
 
   @keyframes letterIn {
-    from { opacity: 0; transform: translateY(20px) scale(0.85); filter: blur(8px); }
-    to   { opacity: 0.9; transform: translateY(0) scale(1); filter: blur(0); }
+    from { opacity: 0; transform: translateY(30px) scale(0.8) rotateX(-10deg); filter: blur(10px); }
+    to { opacity: 1; transform: translateY(0) scale(1) rotateX(0); filter: blur(0); }
   }
   @keyframes float {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
+    50% { transform: translateY(-12px); }
   }
   @keyframes pulse {
-    0%, 100% { opacity: 0.4; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(1.05); }
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.08); }
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes bob {
     0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(4px); }
+    50% { transform: translateY(6px); }
   }
   @keyframes shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
   }
+  @keyframes glow {
+    0%, 100% { text-shadow: 0 0 10px rgba(88, 101, 242, 0.3), 0 0 20px rgba(88, 101, 242, 0.15); }
+    50% { text-shadow: 0 0 20px rgba(88, 101, 242, 0.6), 0 0 40px rgba(88, 101, 242, 0.3); }
+  }
 `;
 
-/* ══════════════════════════════════════════
-   Styles
-   ══════════════════════════════════════════ */
 const s = {
   loadingScreen: { minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#050507" },
   loadingPulse: { width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(88,101,242,0.2)", borderTopColor: "#5865F2", animation: "spin 0.8s linear infinite" },
 
   canvas: { position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none" },
-  orbTop: { position: "fixed", top: -300, right: -200, width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle, rgba(88,101,242,0.08) 0%, transparent 70%)", pointerEvents: "none", zIndex: 0, animation: "pulse 8s ease-in-out infinite" },
-  orbBottom: { position: "fixed", bottom: -400, left: -200, width: 800, height: 800, borderRadius: "50%", background: "radial-gradient(circle, rgba(6,182,212,0.05) 0%, transparent 70%)", pointerEvents: "none", zIndex: 0, animation: "pulse 10s ease-in-out infinite 2s" },
+  orbTop: { position: "fixed", top: -400, right: -300, width: 900, height: 900, borderRadius: "50%", background: "radial-gradient(circle, rgba(88,101,242,0.12) 0%, transparent 70%)", pointerEvents: "none", zIndex: 0, animation: "pulse 12s ease-in-out infinite" },
+  orbBottom: { position: "fixed", bottom: -500, left: -300, width: 1000, height: 1000, borderRadius: "50%", background: "radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%)", pointerEvents: "none", zIndex: 0, animation: "pulse 14s ease-in-out infinite 2s" },
+  orbMid: { position: "fixed", top: "50%", left: "-20%", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(168,85,247,0.05) 0%, transparent 70%)", pointerEvents: "none", zIndex: 0, animation: "pulse 16s ease-in-out infinite 4s" },
 
-  // Navbar
-  navbar: { position: "fixed", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 32px", zIndex: 100, backdropFilter: "blur(20px)", background: "rgba(5,5,7,0.6)", borderBottom: "1px solid rgba(255,255,255,0.04)" },
-  navLogo: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 4, color: "#fff" },
-  navRight: { display: "flex", alignItems: "center", gap: 12 },
-  navBtn: { display: "inline-flex", alignItems: "center", background: "#5865F2", border: "none", color: "#fff", padding: "10px 22px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "all 0.2s", letterSpacing: 0.3 },
+  navbar: { position: "fixed", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 40px", zIndex: 100, backdropFilter: "blur(30px)", background: "rgba(5,5,7,0.5)", borderBottom: "1px solid rgba(88,101,242,0.1)", boxShadow: "0 8px 32px rgba(0,0,0,0.2)" },
+  navLogo: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 26, letterSpacing: 3, fontWeight: 700, color: "#fff", background: "linear-gradient(135deg, #5865F2, #06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
+  navRight: { display: "flex", alignItems: "center", gap: 16 },
+  navBtn: { display: "inline-flex", alignItems: "center", background: "linear-gradient(135deg, #5865F2, #3B82F6)", border: "1px solid rgba(88,101,242,0.3)", color: "#fff", padding: "12px 26px", borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", boxShadow: "0 8px 24px rgba(88,101,242,0.25)", letterSpacing: 0.5 },
 
-  // Scroll wrapper
   scrollWrap: { position: "relative", zIndex: 10, fontFamily: "'Outfit', sans-serif", color: "#fff" },
 
-  // Hero
-  hero: { minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "120px 24px 60px", textAlign: "center", position: "relative" },
-  heroInner: { transition: "all 0.9s cubic-bezier(0.16, 1, 0.3, 1)" },
-  welcomeLetters: { display: "flex", gap: "clamp(6px, 1.5vw, 16px)", justifyContent: "center", marginBottom: 24 },
-  heroLetter: { fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(36px, 7vw, 72px)", lineHeight: 1, color: "rgba(255,255,255,0.9)", animation: "letterIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both", userSelect: "none" },
-  heroHeading: { fontFamily: "'Outfit', sans-serif", fontSize: "clamp(22px, 3.5vw, 42px)", fontWeight: 700, letterSpacing: -0.5, marginBottom: 16, lineHeight: 1.2 },
-  welcomeHeading: { fontFamily: "'Outfit', sans-serif", fontSize: "clamp(20px, 3vw, 36px)", fontWeight: 700, letterSpacing: -0.5, marginBottom: 12, lineHeight: 1.2 },
-  nickHighlight: { color: "#5865F2", position: "relative" },
-  heroSub: { fontSize: "clamp(14px, 1.5vw, 18px)", color: "rgba(255,255,255,0.45)", maxWidth: 480, marginLeft: "auto", marginRight: "auto", marginBottom: 36, lineHeight: 1.7, fontWeight: 300 },
-  ctaBtn: { display: "inline-flex", alignItems: "center", gap: 8, background: "#5865F2", border: "none", color: "#fff", padding: "14px 32px", borderRadius: 12, fontSize: 16, fontWeight: 600, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "all 0.25s", letterSpacing: 0.3 },
-  ctaArrow: { display: "inline-block", transition: "transform 0.25s", fontSize: 18 },
+  hero: { minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "140px 24px 80px", textAlign: "center", position: "relative" },
+  heroInner: { transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1)" },
+  welcomeLetters: { display: "flex", gap: "clamp(8px, 2vw, 20px)", justifyContent: "center", marginBottom: 28 },
+  heroLetter: { fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(48px, 8vw, 84px)", fontWeight: 800, lineHeight: 1, color: "rgba(255,255,255,0.95)", animation: "letterIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both", userSelect: "none", textShadow: "0 2px 20px rgba(88,101,242,0.2)" },
+  heroHeading: { fontFamily: "'Outfit', sans-serif", fontSize: "clamp(28px, 4vw, 52px)", fontWeight: 800, letterSpacing: -0.8, marginBottom: 20, lineHeight: 1.15 },
+  welcomeHeading: { fontFamily: "'Outfit', sans-serif", fontSize: "clamp(24px, 3.5vw, 44px)", fontWeight: 800, letterSpacing: -0.6, marginBottom: 16, lineHeight: 1.2 },
+  gradientText: { background: "linear-gradient(135deg, #5865F2, #06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", position: "relative" },
+  gradientText2: { background: "linear-gradient(135deg, #F97316, #EC4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
+  nickHighlight: { color: "#06B6D4", fontWeight: 900, textShadow: "0 0 20px rgba(6,182,212,0.4)" },
+  heroSub: { fontSize: "clamp(16px, 1.8vw, 20px)", color: "rgba(255,255,255,0.55)", maxWidth: 560, marginLeft: "auto", marginRight: "auto", marginBottom: 44, lineHeight: 1.8, fontWeight: 300 },
+  ctaGroup: { display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" },
+  ctaBtn: { display: "inline-flex", alignItems: "center", gap: 10, background: "linear-gradient(135deg, #5865F2 0%, #3B82F6 100%)", border: "1px solid rgba(88,101,242,0.4)", color: "#fff", padding: "16px 40px", borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "all 0.35s cubic-bezier(0.34,1.56,0.64,1)", letterSpacing: 0.3, boxShadow: "0 12px 40px rgba(88,101,242,0.3), inset 0 1px 1px rgba(255,255,255,0.2)" },
 
-  scrollHint: { position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, color: "rgba(255,255,255,0.25)", fontSize: 10, letterSpacing: 3, textTransform: "uppercase", fontWeight: 300, animation: "float 3s ease-in-out infinite" },
-  scrollArrow: { animation: "bob 2s ease-in-out infinite", opacity: 0.6 },
+  scrollHint: { position: "absolute", bottom: 48, left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, color: "rgba(255,255,255,0.25)", fontSize: 11, letterSpacing: 3, textTransform: "uppercase", fontWeight: 400, animation: "float 3.5s ease-in-out infinite" },
+  scrollArrow: { animation: "bob 2.5s ease-in-out infinite", opacity: 0.7 },
 
-  // Sections
-  section: { padding: "100px 24px", maxWidth: 1100, marginLeft: "auto", marginRight: "auto" },
-  sectionTitle: { fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(28px, 4vw, 48px)", letterSpacing: 2, textAlign: "center", marginBottom: 12 },
-  sectionSub: { fontSize: 16, color: "rgba(255,255,255,0.35)", textAlign: "center", marginBottom: 48, fontWeight: 300 },
+  section: { padding: "120px 24px", maxWidth: 1200, marginLeft: "auto", marginRight: "auto" },
+  agentSection: { padding: "120px 24px", maxWidth: 1400, marginLeft: "auto", marginRight: "auto", background: "linear-gradient(180deg, rgba(88,101,242,0.04) 0%, transparent 100%)" },
+  sectionTitle: { fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 800, letterSpacing: 1, textAlign: "center", marginBottom: 16, background: "linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
+  sectionSub: { fontSize: 18, color: "rgba(255,255,255,0.4)", textAlign: "center", marginBottom: 60, fontWeight: 300 },
 
-  // Features
-  featuresGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 },
-  featureCard: { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "32px 28px", transition: "all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)", cursor: "default" },
-  featureIcon: { fontSize: 32, display: "block", marginBottom: 16 },
-  featureTitle: { fontSize: 18, fontWeight: 700, marginBottom: 10, letterSpacing: -0.2 },
-  featureDesc: { fontSize: 14, color: "rgba(255,255,255,0.4)", lineHeight: 1.7, fontWeight: 300 },
+  featuresGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 },
+  featureCard: { background: "rgba(88,101,242,0.04)", border: "1px solid rgba(88,101,242,0.15)", borderRadius: 20, padding: "40px 36px", transition: "all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)", cursor: "default", position: "relative", overflow: "hidden" },
+  featureIcon: { fontSize: 48, display: "block", marginBottom: 20 },
+  featureTitle: { fontSize: 22, fontWeight: 800, marginBottom: 14, letterSpacing: -0.3 },
+  featureDesc: { fontSize: 15, color: "rgba(255,255,255,0.45)", lineHeight: 1.8, fontWeight: 300 },
 
-  // Stats
-  statsRow: { display: "flex", justifyContent: "center", gap: "clamp(32px, 6vw, 80px)", flexWrap: "wrap" },
+  agentGridWrap: { marginTop: 60 },
+  agentBadge: { display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 48, background: "linear-gradient(135deg, rgba(88,101,242,0.1), rgba(6,182,212,0.1))", border: "2px solid rgba(88,101,242,0.2)", borderRadius: 20, padding: "24px 48px", backdropFilter: "blur(20px)" },
+  agentBadgeText: { fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.5)", letterSpacing: 2, textTransform: "uppercase" },
+  agentBadgeValue: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 48, fontWeight: 900, background: "linear-gradient(135deg, #5865F2, #06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
+  agentGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))", gap: 12, maxWidth: 900, marginLeft: "auto", marginRight: "auto" },
+  agentTag: { background: "rgba(88,101,242,0.08)", border: "1px solid rgba(88,101,242,0.2)", color: "rgba(255,255,255,0.7)", padding: "12px", borderRadius: 10, textAlign: "center", fontSize: 12, fontWeight: 600, letterSpacing: 1, cursor: "default", transition: "all 0.3s", textTransform: "uppercase" },
+
+  statsRow: { display: "flex", justifyContent: "center", gap: "clamp(40px, 8vw, 120px)", flexWrap: "wrap" },
   statBlock: { textAlign: "center" },
-  statNumber: { display: "block", fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(36px, 5vw, 56px)", letterSpacing: 2, background: "linear-gradient(135deg, #5865F2, #06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" },
-  statLabel: { fontSize: 14, color: "rgba(255,255,255,0.35)", fontWeight: 400, letterSpacing: 1, textTransform: "uppercase" },
+  statNumber: { display: "block", fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(44px, 6vw, 64px)", fontWeight: 900, letterSpacing: 1, background: "linear-gradient(135deg, #5865F2, #06B6D4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 8 },
+  statLabel: { fontSize: 15, color: "rgba(255,255,255,0.4)", fontWeight: 500, letterSpacing: 1.5, textTransform: "uppercase" },
 
-  // CTA section
-  ctaSection: { paddingTop: 60, paddingBottom: 100 },
-  ctaTitle: { fontFamily: "'Bebas Neue', sans-serif", fontSize: "clamp(28px, 4vw, 48px)", letterSpacing: 2, marginBottom: 12 },
-  ctaSub: { fontSize: 16, color: "rgba(255,255,255,0.35)", fontWeight: 300, marginBottom: 0 },
+  ctaSection: { paddingTop: 80, paddingBottom: 140, background: "linear-gradient(180deg, transparent 0%, rgba(88,101,242,0.05) 100%)", borderTop: "1px solid rgba(88,101,242,0.1)" },
+  ctaTitle: { fontFamily: "'Space Grotesk', sans-serif", fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 900, letterSpacing: 1, marginBottom: 16 },
+  ctaSub: { fontSize: 18, color: "rgba(255,255,255,0.45)", fontWeight: 300, marginBottom: 0 },
 
-  // Footer
-  footer: { padding: "40px 24px", borderTop: "1px solid rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", gap: 16, flexWrap: "wrap" },
-  footerLogo: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, letterSpacing: 3, color: "rgba(255,255,255,0.25)" },
-  footerText: { fontSize: 12, color: "rgba(255,255,255,0.15)", fontWeight: 300 },
+  footer: { padding: "50px 24px", borderTop: "1px solid rgba(88,101,242,0.1)", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap", background: "rgba(88,101,242,0.02)" },
+  footerLogo: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 800, letterSpacing: 2, color: "rgba(88,101,242,0.6)" },
+  footerDivider: { color: "rgba(255,255,255,0.1)", fontSize: 16 },
+  footerText: { fontSize: 13, color: "rgba(255,255,255,0.25)", fontWeight: 300, letterSpacing: 0.5 },
 };
