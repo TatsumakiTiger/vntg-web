@@ -810,8 +810,8 @@ function InfoTooltip({ text }) {
             position: "fixed",
             left: 16,
             right: 16,
-            bottom: "auto",
-            top: 120,
+            top: "auto",
+            bottom: 24,
             transform: "none",
             whiteSpace: "normal",
             textAlign: "center",
@@ -947,7 +947,7 @@ const styles = {
   filterGroup: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" },
 
   infoIcon: { fontSize: 13, color: "rgba(255,255,255,0.18)", cursor: "default", userSelect: "none", lineHeight: 1, display: "inline-flex", alignItems: "center", padding: "0 2px" },
-  infoTooltip: { position: "absolute", left: "50%", bottom: "calc(100% + 10px)", transform: "translateX(-50%)", background: "#18181f", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "rgba(255,255,255,0.6)", whiteSpace: "normal", maxWidth: 280, pointerEvents: "none", zIndex: 100, boxShadow: "0 12px 32px rgba(0,0,0,0.6)", lineHeight: 1.6 },
+  infoTooltip: { position: "absolute", left: "50%", top: "calc(100% + 10px)", transform: "translateX(-50%)", background: "#18181f", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "rgba(255,255,255,0.6)", whiteSpace: "normal", maxWidth: 260, pointerEvents: "none", zIndex: 100, boxShadow: "0 12px 32px rgba(0,0,0,0.6)", lineHeight: 1.6 },
 
   selectWrap: { position: "relative", display: "inline-flex", alignItems: "center" },
   select: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 12px", fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: "pointer", outline: "none", minWidth: 90, appearance: "none", WebkitAppearance: "none" },
