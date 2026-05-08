@@ -175,7 +175,7 @@ export default function ScrollScene() {
             <section className="sec sec-transparent">
               <div className="sec-in">
                 <div className="stats">
-                  {[["500+", "PRO VODS"], ["29", "AGENTS"], ["FREE", "FOREVER"]].map(([v, l], i) => (
+                  {[["500+", "PRO VODS"], ["ALL", "AGENTS"], ["FREE", "FOREVER"]].map(([v, l], i) => (
                     <Fade key={i} delay={i * 100}>
                       <div className="stat">
                         <span className="stat-v">{v}</span>
@@ -262,7 +262,7 @@ body{background:#000;overflow-x:hidden;font-family:'Outfit',sans-serif;color:#ff
 .sec-h{font-family:'Space Grotesk',sans-serif;font-size:clamp(28px,4.5vw,50px);font-weight:700;line-height:1.2;margin-bottom:64px}
 
 /* ── Features ── */
-.feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}@media(max-width:860px){.feat-grid{grid-template-columns:1fr}}
 .feat-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:44px 32px;transition:all .4s ease;position:relative;overflow:hidden}
 .feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.25),transparent);opacity:0;transition:opacity .4s}
 .feat-card:hover{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);transform:translateY(-4px)}
