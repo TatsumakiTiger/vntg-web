@@ -333,8 +333,6 @@ export default function Dashboard() {
       `}</style>
 
       <div style={styles.root}>
-        <div style={styles.ambientGlow} />
-
         {/* ── Top bar ── */}
         <header style={styles.header}>
           <div style={styles.headerLeft}>

@@ -160,10 +160,6 @@ export default function Onboarding() {
     <>
       <style>{CSS}</style>
 
-      {/* Background */}
-      <div style={s.orbTop} />
-      <div style={s.orbBottom} />
-
       <div style={s.screen}>
         {/* Progress bar */}
         <div style={s.progressWrap}>
