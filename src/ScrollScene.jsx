@@ -33,7 +33,6 @@ export default function ScrollScene() {
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
   const [show, setShow] = useState(false);
-  const [gifOn, setGifOn] = useState(false);
   const [sy, setSy] = useState(0);
 
   useEffect(() => {
@@ -81,24 +80,10 @@ export default function ScrollScene() {
   );
 
   const nick = user?.vantage_nick || user?.global_name || user?.username;
-  const gOp = Math.max(0.1, 0.65 - sy / 1800);
-  const gSc = 1 + sy / 10000;
 
   return (
     <>
       <style>{CSS}</style>
-
-      {/* ─── FIXED GIF BACKGROUND ─── */}
-      <div className="gif-wrap">
-        <img
-          src="/brain-crystal.gif"
-          alt=""
-          className="gif-img"
-          style={{ opacity: gifOn ? gOp : 0, transform: `scale(${gSc})` }}
-          onLoad={() => setGifOn(true)}
-        />
-        <div className="gif-vig" />
-      </div>
 
       {/* ─── NAVBAR ─── */}
       <nav className="nav" style={{
@@ -237,11 +222,6 @@ body{background:#000;overflow-x:hidden;font-family:'Outfit',sans-serif;color:#ff
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
-
-/* ── GIF Background ── */
-.gif-wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:0;pointer-events:none}
-.gif-img{width:clamp(260px,50vw,700px);height:auto;object-fit:contain;transition:opacity 1.8s ease;will-change:transform,opacity}
-.gif-vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 20%,rgba(0,0,0,0.55) 50%,#000 78%)}
 
 /* ── Navbar ── */
 .nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(24px,5vw,64px);height:72px;transition:all .4s ease;border-bottom:1px solid rgba(255,255,255,0.04)}

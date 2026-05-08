@@ -320,9 +320,9 @@ export default function Dashboard() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #050507; }
+        body { background: #000; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
@@ -659,18 +659,18 @@ function ProfileCard({ user }) {
                 fontSize: 13,
                 fontWeight: 500,
                 whiteSpace: "nowrap",
-                background: "rgba(59,130,246,0.15)",
-                borderColor: "rgba(59,130,246,0.25)",
+                background: "rgba(201,168,76,0.15)",
+                borderColor: "rgba(201,168,76,0.25)",
                 color: "rgba(255,255,255,0.85)",
                 transition: "all 0.2s",
               }}
               onMouseEnter={(e) => {
-                e.target.style.background = "rgba(59,130,246,0.25)";
-                e.target.style.borderColor = "rgba(59,130,246,0.4)";
+                e.target.style.background = "rgba(201,168,76,0.25)";
+                e.target.style.borderColor = "rgba(201,168,76,0.4)";
               }}
               onMouseLeave={(e) => {
-                e.target.style.background = "rgba(59,130,246,0.15)";
-                e.target.style.borderColor = "rgba(59,130,246,0.25)";
+                e.target.style.background = "rgba(201,168,76,0.15)";
+                e.target.style.borderColor = "rgba(201,168,76,0.25)";
               }}
             >
               Upload Image
@@ -721,8 +721,8 @@ function ProfileCard({ user }) {
               padding: "10px 16px",
               fontSize: 13,
               fontWeight: 500,
-              background: saving || (!editingAvatar && (editingNick === user.vantage_nick || nickStatus !== "available")) ? "rgba(59,130,246,0.1)" : "rgba(59,130,246,0.2)",
-              border: "1px solid rgba(59,130,246,0.25)",
+              background: saving || (!editingAvatar && (editingNick === user.vantage_nick || nickStatus !== "available")) ? "rgba(201,168,76,0.1)" : "rgba(201,168,76,0.2)",
+              border: "1px solid rgba(201,168,76,0.25)",
               color: saving || (!editingAvatar && (editingNick === user.vantage_nick || nickStatus !== "available")) ? "rgba(255,255,255,0.4)" : "#fff",
               borderRadius: 8,
               cursor: saving || (!editingAvatar && (editingNick === user.vantage_nick || nickStatus !== "available")) ? "not-allowed" : "pointer",
@@ -907,7 +907,7 @@ function Select({ value, onChange, placeholder, options, locked = false }) {
                 style={{
                   ...styles.selectOption,
                   ...(i === highlight ? styles.selectOptionActive : {}),
-                  ...(opt === value ? { color: "#60a5fa" } : {}),
+                  ...(opt === value ? { color: "#C9A84C" } : {}),
                 }}
               >
                 {opt}
@@ -924,22 +924,22 @@ function Select({ value, onChange, placeholder, options, locked = false }) {
    Styles
    ══════════════════════════════════════════ */
 const styles = {
-  root: { minHeight: "100vh", background: "#050507", fontFamily: "'Outfit', sans-serif", color: "#fff", position: "relative", overflow: "hidden" },
-  ambientGlow: { position: "fixed", top: -200, right: -200, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)", pointerEvents: "none", animation: "glow 8s ease-in-out infinite" },
+  root: { minHeight: "100vh", background: "#000", fontFamily: "'Outfit', sans-serif", color: "#fff", position: "relative", overflow: "hidden" },
+  ambientGlow: { position: "fixed", top: -200, right: -200, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)", pointerEvents: "none", animation: "glow 8s ease-in-out infinite" },
 
-  header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 32px", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 50, background: "rgba(5,5,7,0.85)" },
+  header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 32px", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 50, background: "rgba(0,0,0,0.85)" },
   headerLeft: { display: "flex", alignItems: "center", gap: 10 },
-  logo: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 4, color: "#fff" },
-  logoBeta: { fontSize: 9, fontWeight: 600, letterSpacing: 2, color: "rgba(59,130,246,0.9)", background: "rgba(59,130,246,0.12)", padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" },
+  logo: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, letterSpacing: 6, fontWeight: 700, color: "#fff" },
+  logoBeta: { fontSize: 9, fontWeight: 600, letterSpacing: 2, color: "rgba(201,168,76,0.9)", background: "rgba(201,168,76,0.12)", padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" },
   headerRight: { display: "flex", alignItems: "center", gap: 12 },
   headerAvatar: { width: 32, height: 32, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)", objectFit: "cover", display: "block" },
   headerName: { fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.7)" },
   logoutBtn: { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)", padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "all 0.2s", fontFamily: "'Outfit', sans-serif" },
 
-  tabBar: { display: "flex", gap: 4, padding: "0 32px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(5,5,7,0.6)" },
+  tabBar: { display: "flex", gap: 4, padding: "0 32px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.6)" },
   tab: { position: "relative", background: "none", border: "none", color: "rgba(255,255,255,0.35)", padding: "14px 20px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "color 0.2s", letterSpacing: 0.5 },
   tabActive: { color: "#fff" },
-  tabIndicator: { position: "absolute", bottom: 0, left: 20, right: 20, height: 2, background: "linear-gradient(90deg, #3B82F6, #06B6D4)", borderRadius: "2px 2px 0 0" },
+  tabIndicator: { position: "absolute", bottom: 0, left: 20, right: 20, height: 2, background: "linear-gradient(90deg, #C9A84C, #E8D5A0)", borderRadius: "2px 2px 0 0" },
 
   main: { padding: "28px 32px", maxWidth: 1280, margin: "0 auto" },
 
@@ -955,7 +955,7 @@ const styles = {
   lockIcon: { position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 10, opacity: 0.2, pointerEvents: "none", userSelect: "none" },
   selectDropdown: { position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, minWidth: 160, maxHeight: 240, overflowY: "auto", background: "#111117", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: 4, zIndex: 20, boxShadow: "0 10px 30px rgba(0,0,0,0.5)" },
   selectOption: { padding: "7px 10px", fontSize: 13, color: "rgba(255,255,255,0.85)", borderRadius: 5, cursor: "pointer", fontFamily: "'Outfit', sans-serif", userSelect: "none" },
-  selectOptionActive: { background: "rgba(59,130,246,0.15)", color: "#fff" },
+  selectOptionActive: { background: "rgba(201,168,76,0.15)", color: "#fff" },
   clearBtn: { background: "none", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)", padding: "8px 14px", borderRadius: 8, fontSize: 12, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "all 0.2s" },
   resultCount: { fontSize: 13, color: "rgba(255,255,255,0.25)", fontWeight: 400 },
 
@@ -981,8 +981,8 @@ const styles = {
   profileCard: { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 32, maxWidth: 520 },
   profileHeader: { display: "flex", alignItems: "center", gap: 20 },
   profileAvatarWrap: { position: "relative", flexShrink: 0, width: 72, height: 72, display: "flex", alignItems: "center", justifyContent: "center" },
-  profileAvatar: { width: 72, height: 72, borderRadius: "50%", border: "3px solid rgba(59,130,246,0.3)", objectFit: "cover", display: "block" },
-  profileAvatarRing: { position: "absolute", top: "50%", left: "50%", width: 80, height: 80, transform: "translate(-50%, -50%)", borderRadius: "50%", border: "2px solid rgba(59,130,246,0.15)", pointerEvents: "none" },
+  profileAvatar: { width: 72, height: 72, borderRadius: "50%", border: "3px solid rgba(201,168,76,0.3)", objectFit: "cover", display: "block" },
+  profileAvatarRing: { position: "absolute", top: "50%", left: "50%", width: 80, height: 80, transform: "translate(-50%, -50%)", borderRadius: "50%", border: "2px solid rgba(201,168,76,0.15)", pointerEvents: "none" },
   profileName: { fontSize: 22, fontWeight: 700, letterSpacing: -0.3 },
   profileUsername: { fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 2 },
   profileDivider: { height: 1, background: "rgba(255,255,255,0.06)", margin: "24px 0" },
@@ -991,7 +991,7 @@ const styles = {
   profileLabel: { fontSize: 13, color: "rgba(255,255,255,0.3)", fontWeight: 400 },
   profileValue: { fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500 },
 
-  loadingScreen: { minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#050507", gap: 16 },
-  loadingPulse: { width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(59,130,246,0.2)", borderTopColor: "#3B82F6", animation: "spin 0.8s linear infinite" },
+  loadingScreen: { minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#000", gap: 16 },
+  loadingPulse: { width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(201,168,76,0.2)", borderTopColor: "#C9A84C", animation: "spin 0.8s linear infinite" },
   loadingText: { fontFamily: "'Outfit', sans-serif", fontSize: 14, color: "rgba(255,255,255,0.3)" },
 };
