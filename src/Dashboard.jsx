@@ -59,6 +59,7 @@ export default function Dashboard() {
   const [filterMap, setFilterMap] = useState("");
   const [filterPlayer, setFilterPlayer] = useState("");
   const [filterRole, setFilterRole] = useState("");
+  const [filterChannel, setFilterChannel] = useState("");
   /* base options for instant initial render (from /api/videos/filters) */
   const [filterOptions, setFilterOptions] = useState({ agents: [], maps: [], players: [] });
   /* full video meta for local cross-filtering */
@@ -237,6 +238,7 @@ export default function Dashboard() {
       if (excludeKey !== "agent" && filterAgent && v.agent !== filterAgent) return false;
       if (excludeKey !== "map"   && filterMap   && v.map   !== filterMap)   return false;
       if (excludeKey !== "player"&& filterPlayer && v.player !== filterPlayer) return false;
+      if (excludeKey !== "channel"&& filterChannel && v.channel !== filterChannel) return false;
       return true;
     };
 
@@ -249,12 +251,13 @@ export default function Dashboard() {
     let agents = [...new Set(allVideoMeta.filter((v) => match(v, "agent")).map((v) => v.agent))].sort();
     const maps    = [...new Set(allVideoMeta.filter((v) => match(v, "map")).map((v) => v.map))].sort();
     const players = [...new Set(allVideoMeta.filter((v) => match(v, "player")).map((v) => v.player))].sort(alphaNumLast);
+    const channels = [...new Set(allVideoMeta.filter((v) => match(v, "channel")).map((v) => v.channel))].filter(Boolean).sort();
 
     /* apply role filter on agents */
     if (filterRole) agents = agents.filter((a) => AGENT_ROLES[a] === filterRole);
 
-    return { agents, maps, players };
-  }, [allVideoMeta, filterAgent, filterMap, filterPlayer, filterRole, filterOptions]);
+    return { agents, maps, players, channels };
+  }, [allVideoMeta, filterAgent, filterMap, filterPlayer, filterRole, filterChannel, filterOptions]);
 
   function handleLogout() {
     try { localStorage.removeItem("vntg_session"); } catch {}
@@ -267,6 +270,7 @@ export default function Dashboard() {
     setFilterMap("");
     setFilterPlayer("");
     setFilterRole("");
+    setFilterChannel("");
     roleAutoSet.current = false;
   }
 
@@ -296,14 +300,17 @@ export default function Dashboard() {
    * allVideoMeta so the API doesn't need a role param it doesn't support.
    */
   const localVideos = useMemo(() => {
-    if (!filterRole || filterAgent) return null;
+    const needLocal = filterRole && !filterAgent || filterChannel;
+    if (!needLocal) return null;
     return allVideoMeta.filter((v) => {
-      if (AGENT_ROLES[v.agent] !== filterRole) return false;
+      if (filterRole && AGENT_ROLES[v.agent] !== filterRole) return false;
+      if (filterAgent && v.agent !== filterAgent) return false;
       if (filterMap    && v.map    !== filterMap)    return false;
       if (filterPlayer && v.player !== filterPlayer) return false;
+      if (filterChannel && v.channel !== filterChannel) return false;
       return true;
     });
-  }, [filterRole, filterAgent, filterMap, filterPlayer, allVideoMeta]);
+  }, [filterRole, filterAgent, filterMap, filterPlayer, filterChannel, allVideoMeta]);
 
   if (loading) {
     return (
@@ -395,7 +402,13 @@ export default function Dashboard() {
                     options={ROLES}
                     locked={!!filterAgent}
                   />
-                  {(filterRole || filterAgent || filterMap || filterPlayer) && (
+                  <Select
+                    value={filterChannel}
+                    onChange={setFilterChannel}
+                    placeholder="Channel"
+                    options={dynamicOptions.channels || []}
+                  />
+                  {(filterRole || filterAgent || filterMap || filterPlayer || filterChannel) && (
                     <button onClick={clearFilters} style={styles.clearBtn}>✕ Clear</button>
                   )}
                 </div>
