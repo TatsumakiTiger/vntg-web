@@ -398,7 +398,6 @@ export default function Dashboard() {
                   {(filterRole || filterAgent || filterMap || filterPlayer) && (
                     <button onClick={clearFilters} style={styles.clearBtn}>✕ Clear</button>
                   )}
-                  <InfoTooltip text="Some options are hidden because there are no videos with that combination." />
                 </div>
                 <span style={styles.resultCount}>
                   {localVideos ? localVideos.length : (total ?? videos.length)}{" "}
@@ -481,7 +480,7 @@ function VodCard({ video, index }) {
       style={{
         ...styles.card,
         animationDelay: `${Math.min(index * 0.05, 0.3)}s`,
-        transform: hovered ? "translateY(-4px) scale(1.01)" : "translateY(0) scale(1)",
+        transform: hovered ? "translateY(-2px)" : "none",
         borderColor: hovered ? `${agentColor}33` : "rgba(255,255,255,0.06)",
         boxShadow: hovered ? `0 8px 32px ${agentColor}15, 0 0 0 1px ${agentColor}22` : "none",
       }}
