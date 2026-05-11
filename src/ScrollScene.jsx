@@ -117,7 +117,8 @@ export default function ScrollScene() {
                   <div className="goto-options" style={{ pointerEvents: gotoReady ? "all" : "none" }}>
                     <button onClick={() => navigate("/dashboard")} className="goto-opt">Pro View</button>
                     <button onClick={() => navigate("/dashboard?tab=consistency")} className="goto-opt">Your Consistency</button>
-                    <button className="goto-opt goto-disabled">Example</button>
+                    <button onClick={() => navigate("/dashboard?tab=analyzer")} className="goto-opt">Game Analyzer</button>
+                    <button onClick={() => navigate("/dashboard?tab=profile")} className="goto-opt">Profile</button>
                   </div>
                 </div>
 
@@ -288,7 +289,7 @@ body{background:#000;overflow-x:hidden;font-family:'Outfit',sans-serif;color:#ff
 .arr{font-size:18px;transition:transform .3s}
 .cta:hover .arr{transform:translateX(5px)}
 .goto-wrap{display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:100px;padding:16px 32px;gap:0;width:160px;max-width:160px;overflow:hidden;transition:max-width .8s cubic-bezier(.34,1.2,.64,1),width .8s cubic-bezier(.34,1.2,.64,1),box-shadow .4s;cursor:default;white-space:nowrap;box-sizing:border-box}
-.goto-wrap:hover{max-width:320px;width:320px;box-shadow:0 16px 48px rgba(255,255,255,0.12)}
+.goto-wrap:hover{max-width:560px;width:560px;box-shadow:0 16px 48px rgba(255,255,255,0.12)}
 .goto-label{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;color:#000;letter-spacing:.3px;flex-shrink:0;opacity:1;transition:opacity .3s ease .55s;position:absolute}
 .goto-wrap:hover .goto-label{opacity:0;transition:opacity .15s ease;pointer-events:none}
 .goto-divider{display:none}
