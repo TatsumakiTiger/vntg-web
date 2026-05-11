@@ -66,6 +66,9 @@ export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "proview");
   const [contactOpen, setContactOpen] = useState(false);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
+  const [subscribedAgent, setSubscribedAgent] = useState(null);
+  const [selectedAgent, setSelectedAgent] = useState("");
   const navigate = useNavigate();
   const fetchSeq = useRef(0);
   const loadMoreRef = useRef(() => {});
@@ -109,6 +112,7 @@ export default function Dashboard() {
       .then((data) => {
         if (!data.onboarding_complete) { navigate("/onboarding"); return; }
         setUser(data);
+        setSubscribedAgent(data.subscribed_agent || null);
         setLoading(false);
       })
       .catch(() => {
@@ -475,7 +479,7 @@ export default function Dashboard() {
 
           {activeTab === "profile" && (
             <div style={{ animation: "fadeUp 0.4s ease-out" }}>
-              <ProfileCard user={user} />
+              <ProfileCard user={user} subscribedAgent={subscribedAgent} />
             </div>
           )}
         </main>
@@ -498,8 +502,8 @@ export default function Dashboard() {
               btn.style.background = "rgba(255,255,255,0.03)";
             }}
           >
-            <span style={styles.contactLabel}>Subscribe</span>
-            <button style={styles.contactBtn}>⭐</button>
+            <span style={styles.contactLabel}>{subscribedAgent ? "Subscribed" : "Subscribe"}</span>
+            <button style={styles.contactBtn} onClick={() => setSubscribeOpen(true)}>⭐</button>
           </div>
 
           <div
@@ -530,6 +534,73 @@ export default function Dashboard() {
               <p style={styles.modalSub}>Reach us at</p>
               <a href="mailto:vantage@vntg.com.pl" style={styles.modalEmail}>vantage@vntg.com.pl</a>
               <button onClick={() => setContactOpen(false)} style={styles.modalClose}>Close</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Subscribe modal ── */}
+        {subscribeOpen && (
+          <div style={styles.modalOverlay} onClick={() => setSubscribeOpen(false)}>
+            <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
+              <p style={styles.modalTitle}>Agent Subscribe</p>
+              <p style={styles.modalSub}>
+                Wybierz agenta którego chcesz obserwować. Gdy pojawi się nowy film z tym agentem, dostaniesz powiadomienie na Discordzie z linkiem.
+              </p>
+              <select
+                value={selectedAgent || subscribedAgent || ""}
+                onChange={e => setSelectedAgent(e.target.value)}
+                style={styles.subSelect}
+              >
+                <option value="">— wybierz agenta —</option>
+                {Object.keys(AGENT_COLORS).sort().map(a => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+              {subscribedAgent && (
+                <p style={styles.subCurrent}>
+                  Aktualnie: <span style={{ color: AGENT_COLORS[subscribedAgent] || "#C9A84C" }}>{subscribedAgent}</span>
+                </p>
+              )}
+              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                <button
+                  style={{ ...styles.modalClose, ...styles.subConfirm, opacity: (selectedAgent || subscribedAgent) ? 1 : 0.4 }}
+                  onClick={() => {
+                    const agent = selectedAgent || subscribedAgent;
+                    if (!agent) return;
+                    const token = readToken();
+                    fetch(`${API_URL}/api/me/subscription`, {
+                      method: "POST",
+                      headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                      body: JSON.stringify({ agent }),
+                    }).then(r => r.json()).then(() => {
+                      setSubscribedAgent(agent);
+                      setSelectedAgent("");
+                      setSubscribeOpen(false);
+                    }).catch(err => console.error("Sub save error:", err));
+                  }}
+                >
+                  Zapisz
+                </button>
+                {subscribedAgent && (
+                  <button
+                    style={{ ...styles.modalClose, color: "rgba(239,68,68,0.7)", borderColor: "rgba(239,68,68,0.2)" }}
+                    onClick={() => {
+                      const token = readToken();
+                      fetch(`${API_URL}/api/me/subscription`, {
+                        method: "DELETE",
+                        headers: { "Authorization": `Bearer ${token}` },
+                      }).then(() => {
+                        setSubscribedAgent(null);
+                        setSelectedAgent("");
+                        setSubscribeOpen(false);
+                      }).catch(err => console.error("Sub delete error:", err));
+                    }}
+                  >
+                    Usuń
+                  </button>
+                )}
+                <button onClick={() => setSubscribeOpen(false)} style={styles.modalClose}>Anuluj</button>
+              </div>
             </div>
           </div>
         )}
@@ -594,7 +665,7 @@ function VodCard({ video, index }) {
 }
 
 /* ── Profile Card ── */
-function ProfileCard({ user }) {
+function ProfileCard({ user, subscribedAgent }) {
   const displayName = user.vantage_nick || user.global_name || user.username;
   const avatarUrl = user.custom_avatar || user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1a1a2e&color=fff&size=128&bold=true&format=svg`;
 
@@ -843,7 +914,8 @@ function ProfileCard({ user }) {
       <div style={styles.profileDivider} />
       <div style={styles.profileFields}>
         <ProfileField label="Email" value={user.email || "—"} />
-        <ProfileField label="Joined" value={user.created_at ? new Date(user.created_at).toLocaleDateString("en-US") : "—"} />
+        <ProfileField label="Joined" value={user.created_at ? new Date(user.created_at).toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"} />
+        <ProfileField label="Subscribed Agent" value={subscribedAgent || "—"} />
       </div>
     </div>
   );
@@ -1075,4 +1147,7 @@ const styles = {
   modalSub: { fontSize: 13, color: "rgba(255,255,255,0.3)", fontFamily: "'Outfit', sans-serif" },
   modalEmail: { fontSize: 15, color: "#C9A84C", fontFamily: "'Outfit', sans-serif", fontWeight: 600, textDecoration: "none", letterSpacing: 0.3 },
   modalClose: { marginTop: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 100, padding: "8px 24px", color: "rgba(255,255,255,0.5)", fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: "pointer" },
+  subSelect: { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", color: "#fff", fontSize: 14, fontFamily: "'Outfit', sans-serif", outline: "none", width: "100%", cursor: "pointer" },
+  subCurrent: { fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: "'Outfit', sans-serif" },
+  subConfirm: { background: "rgba(201,168,76,0.12)", borderColor: "rgba(201,168,76,0.25)", color: "#C9A84C" },
 };
