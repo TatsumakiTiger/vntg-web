@@ -105,7 +105,7 @@ export default function ScrollScene() {
                 <h1 className="hero-big"><span className="gold-text">{nick}</span></h1>
                 <p className="hero-p">Your competitive edge awaits.</p>
                 <div className="goto-wrap">
-                  <span className="goto-label">Go to &rarr;</span>
+                  <span className="goto-label">Explore &rarr;</span>
                   <div className="goto-divider" />
                   <div className="goto-options">
                     <button onClick={go} className="goto-opt">Dashboard</button>
@@ -113,7 +113,6 @@ export default function ScrollScene() {
                     <button className="goto-opt goto-disabled">Example</button>
                   </div>
                 </div>
-                <p className="goto-hint">hover to explore</p>
               </>
             ) : (
               <>
