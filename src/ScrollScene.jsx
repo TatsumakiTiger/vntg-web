@@ -259,8 +259,8 @@ body{background:#000;overflow-x:hidden;font-family:'Outfit',sans-serif;color:#ff
 .goto-label{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;color:#000;letter-spacing:.3px;flex-shrink:0;opacity:1;transition:opacity .3s ease .55s;position:absolute}
 .goto-wrap:hover .goto-label{opacity:0;transition:opacity .15s ease;pointer-events:none}
 .goto-divider{display:none}
-.goto-options{display:flex;align-items:center;gap:4px;opacity:0;transition:opacity .25s .35s;pointer-events:none}
-.goto-wrap:hover .goto-options{opacity:1;pointer-events:all}
+.goto-options{display:flex;align-items:center;gap:4px;opacity:0;transition:opacity 0s;pointer-events:none}
+.goto-wrap:hover .goto-options{opacity:1;transition:opacity .25s .35s;pointer-events:all}
 .goto-opt{background:transparent;border:none;color:#000;padding:8px 14px;border-radius:100px;font-size:14px;font-weight:600;font-family:'Outfit',sans-serif;cursor:pointer;transition:background .2s;letter-spacing:.3px;flex-shrink:0}
 .goto-opt:hover{background:rgba(0,0,0,0.08)}
 .goto-disabled{opacity:0.35;cursor:default}
