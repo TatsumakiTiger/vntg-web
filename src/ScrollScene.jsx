@@ -91,10 +91,7 @@ export default function ScrollScene() {
         backdropFilter: sy > 60 ? "blur(24px) saturate(1.3)" : "blur(12px)",
       }}>
         <span className="nav-logo">VANTAGE</span>
-        {user
-          ? <button onClick={go} className="nav-btn">Dashboard</button>
-          : <button onClick={login} className="nav-btn">Sign In</button>
-        }
+        {user && <button onClick={go} className="nav-btn">Dashboard</button>}
       </nav>
 
       {/* ─── MAIN CONTENT ─── */}
@@ -133,7 +130,7 @@ export default function ScrollScene() {
           </div>
 
           {!user && (
-            <div className="scroll-cue">
+            <div className="scroll-cue" style={{ opacity: Math.max(0, 1 - sy / 120), pointerEvents: "none" }}>
               <span>SCROLL</span>
               <div className="scroll-bar" />
             </div>
