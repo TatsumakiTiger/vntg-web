@@ -1172,7 +1172,7 @@ function MonthCalendar({ dailyLog }) {
   );
 }
 
-function FullHistoryCalendar({ dailyLog }) {
+function FullHistoryCalendar({ dailyLog, createdAt }) {
   const onlineDates = new Set(dailyLog);
   const sortedLog = [...dailyLog].sort();
   const firstLogDate = sortedLog.length > 0 ? sortedLog[0] : null;
@@ -1181,7 +1181,8 @@ function FullHistoryCalendar({ dailyLog }) {
   today.setHours(0, 0, 0, 0);
   const todayStr = localDateStr(today);
 
-  const anchorDate = firstLogDate ? new Date(firstLogDate) : new Date(today);
+  // Start from account creation date, fall back to first login or today
+  const anchorDate = createdAt ? new Date(createdAt) : (firstLogDate ? new Date(firstLogDate) : new Date(today));
   anchorDate.setHours(0, 0, 0, 0);
   const anchorDay = anchorDate.getDay();
   const daysToMonday = anchorDay === 0 ? 6 : anchorDay - 1;
@@ -1201,42 +1202,79 @@ function FullHistoryCalendar({ dailyLog }) {
     cur.setDate(cur.getDate() + 7);
   }
 
-  const CELL = 13;
+  const CELL = 14;
   const GAP = 3;
+
+  // Track which weeks start a new month/year for labels
+  function getHeaderLabel(week, wi) {
+    const firstDay = week[0];
+    const prevWeek = wi > 0 ? weeks[wi - 1][0] : null;
+    const isNewMonth = !prevWeek || firstDay.getMonth() !== prevWeek.getMonth();
+    const isNewYear = !prevWeek || firstDay.getFullYear() !== prevWeek.getFullYear();
+    if (!isNewMonth) return { month: "", year: "" };
+    return {
+      month: MONTH_SHORT[firstDay.getMonth()],
+      year: isNewYear ? String(firstDay.getFullYear()) : "",
+    };
+  }
 
   return (
     <div>
-      <div style={{ overflowX: "auto", paddingBottom: 4 }}>
+      <div style={{ overflowX: "auto", paddingBottom: 8 }}>
         <div style={{ display: "flex", gap: GAP, minWidth: "max-content" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: GAP, paddingTop: 20 }}>
+          {/* Day-of-week labels */}
+          <div style={{ display: "flex", flexDirection: "column", gap: GAP, paddingTop: 36 }}>
             {DAY_LABELS.map((d, i) => (
-              <div key={i} style={{ width: 28, height: CELL, fontSize: 10, color: "rgba(255,255,255,0.25)", lineHeight: `${CELL}px`, textAlign: "right", paddingRight: 4 }}>
+              <div key={i} style={{ width: 28, height: CELL, fontSize: 10, color: "rgba(255,255,255,0.22)", lineHeight: `${CELL}px`, textAlign: "right", paddingRight: 5 }}>
                 {i % 2 === 0 ? d : ""}
               </div>
             ))}
           </div>
+
+          {/* Week columns */}
           {weeks.map((week, wi) => {
-            const firstDay = week[0];
-            const showMonth = firstDay.getDate() <= 7;
+            const { month, year } = getHeaderLabel(week, wi);
             return (
               <div key={wi} style={{ display: "flex", flexDirection: "column", gap: GAP }}>
-                <div style={{ height: 16, fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: "16px", whiteSpace: "nowrap", fontWeight: 500 }}>
-                  {showMonth ? MONTH_SHORT[firstDay.getMonth()] : ""}
+                {/* Month + year header (2-line: year on top, month below) */}
+                <div style={{ height: 32, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                  {year && (
+                    <div style={{ fontSize: 9, color: "rgba(201,168,76,0.5)", lineHeight: "11px", fontWeight: 600, letterSpacing: 1, whiteSpace: "nowrap" }}>
+                      {year}
+                    </div>
+                  )}
+                  {month && (
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", lineHeight: "13px", fontWeight: 500, whiteSpace: "nowrap" }}>
+                      {month}
+                    </div>
+                  )}
                 </div>
+
+                {/* Day cells */}
                 {week.map((day, di) => {
                   const dateStr = localDateStr(day);
                   const isFuture = dateStr > todayStr;
+                  const isBeforeJoin = createdAt ? dateStr < localDateStr(anchorDate) : false;
                   const isBeforeFirstLog = !firstLogDate || dateStr < firstLogDate;
                   const isOnline = onlineDates.has(dateStr);
                   const isToday = dateStr === todayStr;
+
                   let bg, shadow;
-                  if (isFuture || isBeforeFirstLog) { bg = "rgba(255,255,255,0.04)"; shadow = "none"; }
-                  else if (isOnline) { bg = "#C9A84C"; shadow = "0 0 5px rgba(201,168,76,0.5)"; }
-                  else { bg = "rgba(239,68,68,0.28)"; shadow = "none"; }
+                  if (isFuture || isBeforeJoin || isBeforeFirstLog) {
+                    bg = "rgba(255,255,255,0.04)";
+                    shadow = "none";
+                  } else if (isOnline) {
+                    bg = "#C9A84C";
+                    shadow = "0 0 5px rgba(201,168,76,0.5)";
+                  } else {
+                    bg = "rgba(239,68,68,0.28)";
+                    shadow = "none";
+                  }
+
                   return (
                     <div
                       key={di}
-                      title={`${dateStr}${isToday ? " · TODAY" : ""}${!isFuture && !isBeforeFirstLog ? (isOnline ? " · online" : " · missed") : ""}`}
+                      title={`${dateStr}${isToday ? " · TODAY" : ""}${!isFuture && !isBeforeFirstLog && !isBeforeJoin ? (isOnline ? " · online" : " · missed") : ""}`}
                       style={{
                         width: CELL, height: CELL, borderRadius: 3,
                         background: bg, boxShadow: shadow,
