@@ -68,6 +68,7 @@ export default function Dashboard() {
   const [contactOpen, setContactOpen] = useState(false);
   const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [streakHistoryOpen, setStreakHistoryOpen] = useState(false);
+  const [xpOpen, setXpOpen] = useState(false);
   const [subscribedAgent, setSubscribedAgent] = useState(null);
   const [selectedAgent, setSelectedAgent] = useState("");
   const navigate = useNavigate();
@@ -530,6 +531,25 @@ export default function Dashboard() {
           </div>
 
           {activeTab === "profile" && (
+          <>
+          <div
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
+            onMouseEnter={e => {
+              const lbl = e.currentTarget.querySelector("span");
+              const btn = e.currentTarget.querySelector("button");
+              lbl.style.opacity = "1"; lbl.style.transform = "translateY(0)";
+              btn.style.background = "rgba(255,255,255,0.08)";
+            }}
+            onMouseLeave={e => {
+              const lbl = e.currentTarget.querySelector("span");
+              const btn = e.currentTarget.querySelector("button");
+              lbl.style.opacity = "0"; lbl.style.transform = "translateY(4px)";
+              btn.style.background = "rgba(255,255,255,0.03)";
+            }}
+          >
+            <span style={styles.contactLabel}>XP</span>
+            <button onClick={() => setXpOpen(true)} style={styles.contactBtn}>⚡</button>
+          </div>
           <div
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
             onMouseEnter={e => {
@@ -548,6 +568,7 @@ export default function Dashboard() {
             <span style={styles.contactLabel}>Streak</span>
             <button onClick={() => setStreakHistoryOpen(true)} style={styles.contactBtn}>🔥</button>
           </div>
+          </>
           )}
 
           <div
@@ -578,6 +599,16 @@ export default function Dashboard() {
               <p style={styles.modalSub}>Reach us at</p>
               <a href="mailto:vantage@vntg.com.pl" style={styles.modalEmail}>vantage@vntg.com.pl</a>
               <button onClick={() => setContactOpen(false)} style={styles.modalClose}>Close</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── XP modal ── */}
+        {xpOpen && user && (
+          <div style={styles.modalOverlay} onClick={() => setXpOpen(false)}>
+            <div style={{ ...styles.modalBox, gap: 0, padding: "40px 44px", minWidth: 320 }} onClick={e => e.stopPropagation()}>
+              <XpModalContent user={user} />
+              <button onClick={() => setXpOpen(false)} style={{ ...styles.modalClose, marginTop: 24, alignSelf: "center" }}>Close</button>
             </div>
           </div>
         )}
@@ -989,6 +1020,26 @@ function ProfileCard({ user, subscribedAgent, onFixSubscription }) {
           </span>
         </div>
       </div>
+
+      {/* Small XP bar */}
+      <div style={{ marginTop: 20 }}>
+        {(() => {
+          const { level, name, color, currentXp, requiredXp, progress, isMax } = getLevel(user.xp);
+          return (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color, letterSpacing: 1, textTransform: "uppercase" }}>
+                  Level {level} · {name}
+                </span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
+                  {isMax ? "MAX" : `${currentXp} / ${requiredXp} XP`}
+                </span>
+              </div>
+              <XpBar progress={progress} color={color} height={5} />
+            </>
+          );
+        })()}
+      </div>
     </div>
   );
 }
@@ -998,6 +1049,91 @@ function ProfileField({ label, value }) {
     <div style={styles.profileField}>
       <span style={styles.profileLabel}>{label}</span>
       <span style={styles.profileValue}>{value}</span>
+    </div>
+  );
+}
+
+// XP thresholds: L1=0, L2=50, L3=150, L4=300, L5=500, max=700
+const XP_THRESHOLDS = [0, 50, 150, 300, 500];
+const XP_TO_NEXT    = [50, 100, 150, 200, 200];
+const LEVEL_COLORS  = ["#94A3B8", "#4ADE80", "#3B82F6", "#A855F7", "#C9A84C"];
+const LEVEL_NAMES   = ["Iron", "Bronze", "Silver", "Gold", "Platinum"];
+
+function getLevel(xp) {
+  xp = xp || 0;
+  let level = 1;
+  for (let i = 1; i < XP_THRESHOLDS.length; i++) {
+    if (xp >= XP_THRESHOLDS[i]) level = i + 1; else break;
+  }
+  const idx = level - 1;
+  const xpIntoLevel = Math.min(xp - XP_THRESHOLDS[idx], XP_TO_NEXT[idx]);
+  const progress = xpIntoLevel / XP_TO_NEXT[idx];
+  return { level, name: LEVEL_NAMES[idx], color: LEVEL_COLORS[idx], currentXp: xpIntoLevel, requiredXp: XP_TO_NEXT[idx], progress, isMax: level === 5 && xpIntoLevel >= 200 };
+}
+
+function XpBar({ progress, color, height = 6 }) {
+  return (
+    <div style={{ width: "100%", height, borderRadius: height / 2, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+      <div style={{
+        height: "100%",
+        width: `${Math.min(progress * 100, 100)}%`,
+        borderRadius: height / 2,
+        background: `linear-gradient(90deg, ${color}99, ${color})`,
+        boxShadow: `0 0 8px ${color}66`,
+        transition: "width 0.6s cubic-bezier(0.4,0,0.2,1)",
+      }} />
+    </div>
+  );
+}
+
+function XpModalContent({ user }) {
+  const displayName = user.vantage_nick || user.global_name || user.username;
+  const avatarUrl = user.custom_avatar || user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1a1a2e&color=fff&size=256&bold=true&format=svg`;
+  const { level, name, color, currentXp, requiredXp, progress, isMax } = getLevel(user.xp);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, width: "100%" }}>
+      {/* Avatar with level glow */}
+      <div style={{ position: "relative" }}>
+        <div style={{
+          position: "absolute", inset: -6, borderRadius: "50%",
+          boxShadow: `0 0 24px ${color}55, 0 0 48px ${color}22`,
+          border: `2px solid ${color}66`,
+          borderRadius: "50%",
+        }} />
+        <img src={avatarUrl} alt="" style={{ width: 100, height: 100, borderRadius: "50%", border: `3px solid ${color}`, objectFit: "cover", display: "block", position: "relative" }} />
+      </div>
+
+      {/* Name + level badge */}
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 6 }}>{displayName}</div>
+        <div style={{
+          display: "inline-block",
+          fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase",
+          color, background: `${color}18`, border: `1px solid ${color}44`,
+          padding: "3px 12px", borderRadius: 20,
+        }}>
+          Level {level} · {name}
+        </div>
+      </div>
+
+      {/* XP bar */}
+      <div style={{ width: "100%" }}>
+        <XpBar progress={progress} color={color} height={10} />
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+            {isMax ? "MAX LEVEL" : `${currentXp} / ${requiredXp} XP`}
+          </span>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+            {isMax ? "" : `Next: Level ${level + 1}`}
+          </span>
+        </div>
+      </div>
+
+      {/* Total XP */}
+      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>
+        Total XP: {user.xp || 0}
+      </div>
     </div>
   );
 }
