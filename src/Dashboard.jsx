@@ -340,6 +340,7 @@ export default function Dashboard() {
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         @keyframes glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.7; } }
+        @keyframes starBounce { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 60% { transform: translateY(-3px); } }
       `}</style>
 
       <div style={styles.root}>
@@ -479,7 +480,15 @@ export default function Dashboard() {
 
           {activeTab === "profile" && (
             <div style={{ animation: "fadeUp 0.4s ease-out" }}>
-              <ProfileCard user={user} subscribedAgent={subscribedAgent} />
+              <ProfileCard
+                user={user}
+                subscribedAgent={subscribedAgent}
+                onFixSubscription={() => {
+                  setActiveTab("proview");
+                  setSearchParams({ tab: "proview" }, { replace: true });
+                  setTimeout(() => setSubscribeOpen(true), 100);
+                }}
+              />
             </div>
           )}
         </main>
@@ -503,7 +512,10 @@ export default function Dashboard() {
             }}
           >
             <span style={styles.contactLabel}>{subscribedAgent ? "Subscribed" : "Subscribe"}</span>
-            <button style={styles.contactBtn} onClick={() => setSubscribeOpen(true)}>⭐</button>
+            <button
+              style={{ ...styles.contactBtn, animation: subscribedAgent ? "none" : "starBounce 2s ease-in-out infinite" }}
+              onClick={() => setSubscribeOpen(true)}
+            >⭐</button>
           </div>
 
           <div
@@ -551,7 +563,7 @@ export default function Dashboard() {
                 onChange={e => setSelectedAgent(e.target.value)}
                 style={styles.subSelect}
               >
-                <option value="">— select an agent —</option>
+                <option value="">Select an agent to subscribe</option>
                 {Object.keys(AGENT_COLORS).sort().map(a => (
                   <option key={a} value={a}>{a}</option>
                 ))}
@@ -665,7 +677,7 @@ function VodCard({ video, index }) {
 }
 
 /* ── Profile Card ── */
-function ProfileCard({ user, subscribedAgent }) {
+function ProfileCard({ user, subscribedAgent, onFixSubscription }) {
   const displayName = user.vantage_nick || user.global_name || user.username;
   const avatarUrl = user.custom_avatar || user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1a1a2e&color=fff&size=128&bold=true&format=svg`;
 
@@ -915,7 +927,15 @@ function ProfileCard({ user, subscribedAgent }) {
       <div style={styles.profileFields}>
         <ProfileField label="Email" value={user.email || "—"} />
         <ProfileField label="Joined" value={user.created_at ? new Date(user.created_at).toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"} />
-        <ProfileField label="Subscribed Agent" value={subscribedAgent || "—"} />
+        <div style={styles.profileField}>
+          <span style={styles.profileLabel}>Subscribed Agent</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={styles.profileValue}>{subscribedAgent || "None"}</span>
+            {!subscribedAgent && (
+              <button onClick={onFixSubscription} style={styles.fixBtn}>Fix that</button>
+            )}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -1150,4 +1170,5 @@ const styles = {
   subSelect: { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", color: "#fff", fontSize: 14, fontFamily: "'Outfit', sans-serif", outline: "none", width: "100%", cursor: "pointer" },
   subCurrent: { fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: "'Outfit', sans-serif" },
   subConfirm: { background: "rgba(201,168,76,0.12)", borderColor: "rgba(201,168,76,0.25)", color: "#C9A84C" },
+  fixBtn: { background: "none", border: "none", color: "#C9A84C", fontSize: 12, fontFamily: "'Outfit', sans-serif", cursor: "pointer", padding: 0, fontWeight: 500, letterSpacing: 0.3, textDecoration: "underline", textUnderlineOffset: 3 },
 };
