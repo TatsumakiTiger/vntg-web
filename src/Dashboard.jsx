@@ -544,21 +544,21 @@ export default function Dashboard() {
             <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
               <p style={styles.modalTitle}>Agent Subscribe</p>
               <p style={styles.modalSub}>
-                Wybierz agenta którego chcesz obserwować. Gdy pojawi się nowy film z tym agentem, dostaniesz powiadomienie na Discordzie z linkiem.
+                Choose an agent to follow. Whenever a new VOD with that agent drops, you'll get a Discord DM with a link.
               </p>
               <select
                 value={selectedAgent || subscribedAgent || ""}
                 onChange={e => setSelectedAgent(e.target.value)}
                 style={styles.subSelect}
               >
-                <option value="">— wybierz agenta —</option>
+                <option value="">— select an agent —</option>
                 {Object.keys(AGENT_COLORS).sort().map(a => (
                   <option key={a} value={a}>{a}</option>
                 ))}
               </select>
               {subscribedAgent && (
                 <p style={styles.subCurrent}>
-                  Aktualnie: <span style={{ color: AGENT_COLORS[subscribedAgent] || "#C9A84C" }}>{subscribedAgent}</span>
+                  Currently subscribed to: <span style={{ color: AGENT_COLORS[subscribedAgent] || "#C9A84C" }}>{subscribedAgent}</span>
                 </p>
               )}
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
@@ -579,7 +579,7 @@ export default function Dashboard() {
                     }).catch(err => console.error("Sub save error:", err));
                   }}
                 >
-                  Zapisz
+                  Save
                 </button>
                 {subscribedAgent && (
                   <button
@@ -596,10 +596,10 @@ export default function Dashboard() {
                       }).catch(err => console.error("Sub delete error:", err));
                     }}
                   >
-                    Usuń
+                    Remove
                   </button>
                 )}
-                <button onClick={() => setSubscribeOpen(false)} style={styles.modalClose}>Anuluj</button>
+                <button onClick={() => setSubscribeOpen(false)} style={styles.modalClose}>Cancel</button>
               </div>
             </div>
           </div>
