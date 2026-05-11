@@ -104,10 +104,23 @@ export default function ScrollScene() {
                 <span className="hero-tag">WELCOME BACK</span>
                 <h1 className="hero-big"><span className="gold-text">{nick}</span></h1>
                 <p className="hero-p">Your competitive edge awaits.</p>
-                <button onClick={go} className="cta">
-                  {user.onboarding_complete ? "Go to Dashboard" : "Complete Setup"}
-                  <span className="arr">&rarr;</span>
-                </button>
+                <div className="goto-wrap">
+                  <div className="cta goto-trigger">
+                    <span>GO TO</span>
+                    <span className="arr">&#x25BE;</span>
+                  </div>
+                  <div className="goto-menu">
+                    <button onClick={go} className="goto-item">
+                      Dashboard <span className="goto-arr">&rarr;</span>
+                    </button>
+                    <button className="goto-item goto-disabled">
+                      Leaderboard <span className="goto-arr">&rarr;</span>
+                    </button>
+                    <button className="goto-item goto-disabled">
+                      VOD Library <span className="goto-arr">&rarr;</span>
+                    </button>
+                  </div>
+                </div>
               </>
             ) : (
               <>
@@ -248,6 +261,15 @@ body{background:#000;overflow-x:hidden;font-family:'Outfit',sans-serif;color:#ff
 .cta:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(255,255,255,0.12)}
 .arr{font-size:18px;transition:transform .3s}
 .cta:hover .arr{transform:translateX(5px)}
+.goto-wrap{position:relative;display:inline-block}
+.goto-trigger{gap:10px;padding:16px 40px;cursor:default}
+.goto-menu{position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%);background:rgba(10,10,10,0.92);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:8px;display:flex;flex-direction:column;gap:4px;min-width:220px;opacity:0;pointer-events:none;transform:translateX(-50%) translateY(-6px);transition:opacity .25s ease,transform .25s ease}
+.goto-wrap:hover .goto-menu{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0)}
+.goto-item{background:transparent;border:none;color:rgba(255,255,255,0.85);padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;font-family:'Outfit',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:background .2s,color .2s;letter-spacing:.3px}
+.goto-item:hover{background:rgba(255,255,255,0.08);color:#fff}
+.goto-disabled{opacity:0.35;cursor:default}
+.goto-disabled:hover{background:transparent;color:rgba(255,255,255,0.85)}
+.goto-arr{font-size:14px;opacity:0.5}
 
 /* ── Scroll Cue ── */
 .scroll-cue{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;color:rgba(255,255,255,0.15);font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:5px;animation:fl 3s ease-in-out infinite}
