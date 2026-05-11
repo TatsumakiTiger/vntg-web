@@ -530,8 +530,9 @@ export default function Dashboard() {
           </div>
 
           <div
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, opacity: activeTab === "profile" ? 1 : 0, pointerEvents: activeTab === "profile" ? "all" : "none", transition: "opacity .2s" }}
             onMouseEnter={e => {
+              if (activeTab !== "profile") return;
               const lbl = e.currentTarget.querySelector("span");
               const btn = e.currentTarget.querySelector("button");
               lbl.style.opacity = "1"; lbl.style.transform = "translateY(0)";
