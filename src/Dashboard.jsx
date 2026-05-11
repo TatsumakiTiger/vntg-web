@@ -362,6 +362,7 @@ export default function Dashboard() {
           {[
             { id: "proview", label: "ProView" },
             { id: "consistency", label: "Your Consistency" },
+            { id: "analyzer", label: "Game Analyzer" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -473,6 +474,12 @@ export default function Dashboard() {
           )}
 
           {activeTab === "consistency" && (
+            <div style={{ padding: "48px 32px", color: "rgba(255,255,255,0.25)", fontSize: 14, textAlign: "center" }}>
+              Coming soon.
+            </div>
+          )}
+
+          {activeTab === "analyzer" && (
             <div style={{ padding: "48px 32px", color: "rgba(255,255,255,0.25)", fontSize: 14, textAlign: "center" }}>
               Coming soon.
             </div>
