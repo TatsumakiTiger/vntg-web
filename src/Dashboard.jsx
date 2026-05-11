@@ -1048,12 +1048,13 @@ function StreakCalendar({ dailyLog, createdAt }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const joinDate = createdAt ? new Date(createdAt) : new Date(today);
-  joinDate.setHours(0, 0, 0, 0);
-  const joinDay = joinDate.getDay();
-  const daysToMonday = joinDay === 0 ? 6 : joinDay - 1;
-  const startMonday = new Date(joinDate);
-  startMonday.setDate(joinDate.getDate() - daysToMonday);
+  // Start from first login day, not account creation
+  const anchorDate = firstLogDate ? new Date(firstLogDate) : new Date(today);
+  anchorDate.setHours(0, 0, 0, 0);
+  const anchorDay = anchorDate.getDay();
+  const daysToMonday = anchorDay === 0 ? 6 : anchorDay - 1;
+  const startMonday = new Date(anchorDate);
+  startMonday.setDate(anchorDate.getDate() - daysToMonday);
 
   const weeks = [];
   const cur = new Date(startMonday);
@@ -1107,7 +1108,7 @@ function StreakCalendar({ dailyLog, createdAt }) {
                   const isToday = dateStr === todayStr;
 
                   let bg, shadow;
-                  if (isFuture || isBeforeFirstLog) {
+                  if (isFuture) {
                     bg = "rgba(255,255,255,0.04)";
                     shadow = "none";
                   } else if (isOnline) {
@@ -1121,7 +1122,7 @@ function StreakCalendar({ dailyLog, createdAt }) {
                   return (
                     <div
                       key={di}
-                      title={`${dateStr}${isToday ? " · TODAY" : ""}${!isFuture && !isBeforeFirstLog ? (isOnline ? " · online" : " · missed") : ""}`}
+                      title={`${dateStr}${isToday ? " · TODAY" : ""} · ${isFuture ? "" : isOnline ? "online" : "missed"}`}
                       style={{
                         width: CELL,
                         height: CELL,
