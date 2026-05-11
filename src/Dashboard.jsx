@@ -361,8 +361,8 @@ export default function Dashboard() {
         <nav style={styles.tabBar}>
           {[
             { id: "proview", label: "ProView" },
-            { id: "consistency", label: "Your Consistency" },
-            { id: "analyzer", label: "Game Analyzer" },
+            { id: "consistency", label: "Vlingo" },
+            { id: "analyzer", label: "Game Sense" },
           ].map((tab) => (
             <button
               key={tab.id}
