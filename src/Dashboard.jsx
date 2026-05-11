@@ -547,7 +547,7 @@ export default function Dashboard() {
               btn.style.background = "rgba(255,255,255,0.03)";
             }}
           >
-            <span style={styles.contactLabel}>XP</span>
+            <span style={styles.contactLabel}>XP History</span>
             <button onClick={() => setXpOpen(true)} style={styles.contactBtn}>⚡</button>
           </div>
           <div
@@ -1006,6 +1006,24 @@ function ProfileCard({ user, subscribedAgent, onFixSubscription }) {
           Edit
         </button>
       </div>
+      {/* Small XP bar — right under avatar */}
+      {(() => {
+        const { level, color, currentXp, requiredXp, progress, isMax } = getLevel(user.xp);
+        return (
+          <div style={{ marginTop: 16, marginBottom: 4 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color, letterSpacing: 1, textTransform: "uppercase" }}>
+                Level {level}
+              </span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
+                {isMax ? "MAX" : `${currentXp} / ${requiredXp} XP`}
+              </span>
+            </div>
+            <XpBar progress={progress} color={color} height={5} />
+          </div>
+        );
+      })()}
+
       <div style={styles.profileDivider} />
       <div style={styles.profileFields}>
         <ProfileField label="Email" value={user.email || "—"} />
@@ -1020,26 +1038,6 @@ function ProfileCard({ user, subscribedAgent, onFixSubscription }) {
           </span>
         </div>
       </div>
-
-      {/* Small XP bar */}
-      <div style={{ marginTop: 20 }}>
-        {(() => {
-          const { level, name, color, currentXp, requiredXp, progress, isMax } = getLevel(user.xp);
-          return (
-            <>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color, letterSpacing: 1, textTransform: "uppercase" }}>
-                  Level {level} · {name}
-                </span>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
-                  {isMax ? "MAX" : `${currentXp} / ${requiredXp} XP`}
-                </span>
-              </div>
-              <XpBar progress={progress} color={color} height={5} />
-            </>
-          );
-        })()}
-      </div>
     </div>
   );
 }
@@ -1053,11 +1051,10 @@ function ProfileField({ label, value }) {
   );
 }
 
-// XP thresholds: L1=0, L2=50, L3=150, L4=300, L5=500, max=700
+// XP thresholds: L1=0, L2=50, L3=150, L4=300, L5=500
 const XP_THRESHOLDS = [0, 50, 150, 300, 500];
 const XP_TO_NEXT    = [50, 100, 150, 200, 200];
 const LEVEL_COLORS  = ["#94A3B8", "#4ADE80", "#3B82F6", "#A855F7", "#C9A84C"];
-const LEVEL_NAMES   = ["Iron", "Bronze", "Silver", "Gold", "Platinum"];
 
 function getLevel(xp) {
   xp = xp || 0;
@@ -1068,7 +1065,7 @@ function getLevel(xp) {
   const idx = level - 1;
   const xpIntoLevel = Math.min(xp - XP_THRESHOLDS[idx], XP_TO_NEXT[idx]);
   const progress = xpIntoLevel / XP_TO_NEXT[idx];
-  return { level, name: LEVEL_NAMES[idx], color: LEVEL_COLORS[idx], currentXp: xpIntoLevel, requiredXp: XP_TO_NEXT[idx], progress, isMax: level === 5 && xpIntoLevel >= 200 };
+  return { level, color: LEVEL_COLORS[idx], currentXp: xpIntoLevel, requiredXp: XP_TO_NEXT[idx], progress, isMax: level === 5 && xpIntoLevel >= 200 };
 }
 
 function XpBar({ progress, color, height = 6 }) {
@@ -1089,37 +1086,39 @@ function XpBar({ progress, color, height = 6 }) {
 function XpModalContent({ user }) {
   const displayName = user.vantage_nick || user.global_name || user.username;
   const avatarUrl = user.custom_avatar || user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1a1a2e&color=fff&size=256&bold=true&format=svg`;
-  const { level, name, color, currentXp, requiredXp, progress, isMax } = getLevel(user.xp);
+  const { level, color, currentXp, requiredXp, progress, isMax } = getLevel(user.xp);
+  const xpLog = [...(user.xp_log || [])].reverse();
+
+  const MONTH_SHORT_EN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  function fmtDate(dateStr) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return `${d} ${MONTH_SHORT_EN[m - 1]} ${y}`;
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, width: "100%" }}>
-      {/* Avatar with level glow */}
-      <div style={{ position: "relative" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 24, width: "100%" }}>
+      {/* Avatar */}
+      <div style={{ position: "relative", flexShrink: 0 }}>
         <div style={{
-          position: "absolute", inset: -6, borderRadius: "50%",
-          boxShadow: `0 0 24px ${color}55, 0 0 48px ${color}22`,
-          border: `2px solid ${color}66`,
-          borderRadius: "50%",
+          position: "absolute", inset: -8, borderRadius: "50%",
+          boxShadow: `0 0 32px ${color}55, 0 0 64px ${color}22`,
+          border: `2px solid ${color}55`,
         }} />
-        <img src={avatarUrl} alt="" style={{ width: 100, height: 100, borderRadius: "50%", border: `3px solid ${color}`, objectFit: "cover", display: "block", position: "relative" }} />
+        <img src={avatarUrl} alt="" style={{ width: 140, height: 140, borderRadius: "50%", border: `3px solid ${color}`, objectFit: "cover", display: "block", position: "relative" }} />
       </div>
 
-      {/* Name + level badge */}
+      {/* Name + level */}
       <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 6 }}>{displayName}</div>
-        <div style={{
-          display: "inline-block",
-          fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase",
-          color, background: `${color}18`, border: `1px solid ${color}44`,
-          padding: "3px 12px", borderRadius: 20,
-        }}>
-          Level {level} · {name}
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 6 }}>{displayName}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 1, color, textTransform: "uppercase" }}>
+          Level {level}
         </div>
       </div>
 
       {/* XP bar */}
       <div style={{ width: "100%" }}>
-        <XpBar progress={progress} color={color} height={10} />
+        <XpBar progress={progress} color={color} height={12} />
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
           <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
             {isMax ? "MAX LEVEL" : `${currentXp} / ${requiredXp} XP`}
@@ -1128,12 +1127,36 @@ function XpModalContent({ user }) {
             {isMax ? "" : `Next: Level ${level + 1}`}
           </span>
         </div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginTop: 4, textAlign: "right" }}>
+          Total: {user.xp || 0} XP
+        </div>
       </div>
 
-      {/* Total XP */}
-      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>
-        Total XP: {user.xp || 0}
-      </div>
+      {/* XP History */}
+      {xpLog.length > 0 && (
+        <div style={{ width: "100%", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 2, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", marginBottom: 12 }}>
+            XP History
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {xpLog.map((entry, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>
+                    {entry.reason === "Streak Day" ? "Logowanie / Streak" : entry.reason}
+                  </span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)" }}>
+                    {fmtDate(entry.date)} · {entry.streak}-day streak · ×{entry.multiplier}
+                  </span>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 700, color: color, flexShrink: 0, marginLeft: 16 }}>
+                  +{entry.xp} XP
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
