@@ -67,6 +67,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "proview");
   const [contactOpen, setContactOpen] = useState(false);
   const [subscribeOpen, setSubscribeOpen] = useState(false);
+  const [streakHistoryOpen, setStreakHistoryOpen] = useState(false);
   const [subscribedAgent, setSubscribedAgent] = useState(null);
   const [selectedAgent, setSelectedAgent] = useState("");
   const navigate = useNavigate();
@@ -543,6 +544,25 @@ export default function Dashboard() {
               btn.style.background = "rgba(255,255,255,0.03)";
             }}
           >
+            <span style={styles.contactLabel}>Streak</span>
+            <button onClick={() => setStreakHistoryOpen(true)} style={styles.contactBtn}>🔥</button>
+          </div>
+
+          <div
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
+            onMouseEnter={e => {
+              const lbl = e.currentTarget.querySelector("span");
+              const btn = e.currentTarget.querySelector("button");
+              lbl.style.opacity = "1"; lbl.style.transform = "translateY(0)";
+              btn.style.background = "rgba(255,255,255,0.08)";
+            }}
+            onMouseLeave={e => {
+              const lbl = e.currentTarget.querySelector("span");
+              const btn = e.currentTarget.querySelector("button");
+              lbl.style.opacity = "0"; lbl.style.transform = "translateY(4px)";
+              btn.style.background = "rgba(255,255,255,0.03)";
+            }}
+          >
             <span style={styles.contactLabel}>Contact</span>
             <button onClick={() => setContactOpen(true)} style={styles.contactBtn}>📱</button>
           </div>
@@ -556,6 +576,26 @@ export default function Dashboard() {
               <p style={styles.modalSub}>Reach us at</p>
               <a href="mailto:vantage@vntg.com.pl" style={styles.modalEmail}>vantage@vntg.com.pl</a>
               <button onClick={() => setContactOpen(false)} style={styles.modalClose}>Close</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Streak history modal ── */}
+        {streakHistoryOpen && user && (
+          <div style={styles.modalOverlay} onClick={() => setStreakHistoryOpen(false)}>
+            <div
+              style={{ ...styles.modalBox, maxWidth: "90vw", maxHeight: "85vh", overflowY: "auto", alignItems: "flex-start", gap: 16 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 14, width: "100%" }}>
+                <p style={styles.modalTitle}>Streak History</p>
+                <div style={{ marginLeft: "auto", display: "flex", alignItems: "baseline", gap: 6 }}>
+                  <span style={{ fontSize: 28, fontWeight: 700, color: "#fff" }}>{user.streak || 0}</span>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>day streak</span>
+                </div>
+              </div>
+              <FullHistoryCalendar dailyLog={user.daily_log || []} createdAt={user.created_at} />
+              <button onClick={() => setStreakHistoryOpen(false)} style={{ ...styles.modalClose, alignSelf: "center" }}>Close</button>
             </div>
           </div>
         )}
@@ -1020,14 +1060,14 @@ function StreakCard({ user }) {
         <VntgFlame />
       </div>
 
-      {/* Calendar block */}
+      {/* Current month calendar block */}
       <div style={{
         background: "rgba(255,255,255,0.03)",
         border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 16,
         padding: "20px 24px",
       }}>
-        <StreakCalendar dailyLog={user.daily_log || []} createdAt={user.created_at} />
+        <MonthCalendar dailyLog={user.daily_log || []} />
       </div>
     </div>
   );
@@ -1040,26 +1080,112 @@ function localDateStr(date) {
   return `${y}-${m}-${d}`;
 }
 
-function StreakCalendar({ dailyLog, createdAt }) {
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const DAY_LABELS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+function CalendarLegend() {
+  return (
+    <div style={{ display: "flex", gap: 14, marginTop: 14, alignItems: "center", flexWrap: "wrap" }}>
+      {[
+        { bg: "#C9A84C", label: "Online" },
+        { bg: "rgba(239,68,68,0.35)", label: "Missed" },
+        { bg: "rgba(255,255,255,0.06)", label: "No data" },
+        { outline: "2px solid rgba(255,255,255,0.85)", label: "Today" },
+      ].map(({ bg, outline, label }) => (
+        <div key={label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: bg || "transparent", outline: outline || "none", outlineOffset: outline ? "1px" : 0 }} />
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MonthCalendar({ dailyLog }) {
   const onlineDates = new Set(dailyLog);
   const sortedLog = [...dailyLog].sort();
   const firstLogDate = sortedLog.length > 0 ? sortedLog[0] : null;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const todayStr = localDateStr(today);
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDow = new Date(year, month, 1).getDay();
+  const offset = firstDow === 0 ? 6 : firstDow - 1;
+  const cells = [...Array(offset).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
+  while (cells.length % 7 !== 0) cells.push(null);
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
-  const MAX_WEEKS = 16;
+  const CELL = 26;
+  const GAP = 4;
 
-  // Start from first login day, capped at MAX_WEEKS back
+  return (
+    <div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.7)", marginBottom: 14, letterSpacing: 0.5 }}>
+        {MONTH_NAMES[month]} {year}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(7, ${CELL}px)`, gap: GAP, marginBottom: GAP }}>
+        {DAY_LABELS.map(d => (
+          <div key={d} style={{ width: CELL, textAlign: "center", fontSize: 10, color: "rgba(255,255,255,0.25)", fontWeight: 500 }}>{d}</div>
+        ))}
+      </div>
+      {weeks.map((week, wi) => (
+        <div key={wi} style={{ display: "grid", gridTemplateColumns: `repeat(7, ${CELL}px)`, gap: GAP, marginBottom: GAP }}>
+          {week.map((day, di) => {
+            if (!day) return <div key={di} style={{ width: CELL, height: CELL }} />;
+            const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const isFuture = dateStr > todayStr;
+            const isBeforeFirstLog = !firstLogDate || dateStr < firstLogDate;
+            const isOnline = onlineDates.has(dateStr);
+            const isToday = dateStr === todayStr;
+            let bg, shadow;
+            if (isFuture || isBeforeFirstLog) { bg = "rgba(255,255,255,0.04)"; shadow = "none"; }
+            else if (isOnline) { bg = "#C9A84C"; shadow = "0 0 5px rgba(201,168,76,0.5)"; }
+            else { bg = "rgba(239,68,68,0.28)"; shadow = "none"; }
+            return (
+              <div
+                key={di}
+                title={`${dateStr}${isToday ? " · TODAY" : ""}${!isFuture && !isBeforeFirstLog ? (isOnline ? " · online" : " · missed") : ""}`}
+                style={{
+                  width: CELL, height: CELL, borderRadius: 5,
+                  background: bg, boxShadow: shadow,
+                  outline: isToday ? "2px solid rgba(255,255,255,0.85)" : "none",
+                  outlineOffset: "1px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, color: isOnline ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.3)",
+                  fontWeight: 500,
+                }}
+              >
+                {day}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+      <CalendarLegend />
+    </div>
+  );
+}
+
+function FullHistoryCalendar({ dailyLog }) {
+  const onlineDates = new Set(dailyLog);
+  const sortedLog = [...dailyLog].sort();
+  const firstLogDate = sortedLog.length > 0 ? sortedLog[0] : null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = localDateStr(today);
+
   const anchorDate = firstLogDate ? new Date(firstLogDate) : new Date(today);
   anchorDate.setHours(0, 0, 0, 0);
-  const earliest = new Date(today);
-  earliest.setDate(today.getDate() - MAX_WEEKS * 7);
-  const clampedAnchor = anchorDate < earliest ? earliest : anchorDate;
-  const anchorDay = clampedAnchor.getDay();
+  const anchorDay = anchorDate.getDay();
   const daysToMonday = anchorDay === 0 ? 6 : anchorDay - 1;
-  const startMonday = new Date(clampedAnchor);
-  startMonday.setDate(clampedAnchor.getDate() - daysToMonday);
+  const startMonday = new Date(anchorDate);
+  startMonday.setDate(anchorDate.getDate() - daysToMonday);
 
   const weeks = [];
   const cur = new Date(startMonday);
@@ -1076,17 +1202,11 @@ function StreakCalendar({ dailyLog, createdAt }) {
 
   const CELL = 13;
   const GAP = 3;
-  const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   return (
     <div>
-      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 2, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", marginBottom: 16 }}>
-        Activity Calendar
-      </div>
       <div style={{ overflowX: "auto", paddingBottom: 4 }}>
         <div style={{ display: "flex", gap: GAP, minWidth: "max-content" }}>
-          {/* Day labels */}
           <div style={{ display: "flex", flexDirection: "column", gap: GAP, paddingTop: 20 }}>
             {DAY_LABELS.map((d, i) => (
               <div key={i} style={{ width: 28, height: CELL, fontSize: 10, color: "rgba(255,255,255,0.25)", lineHeight: `${CELL}px`, textAlign: "right", paddingRight: 4 }}>
@@ -1094,48 +1214,33 @@ function StreakCalendar({ dailyLog, createdAt }) {
               </div>
             ))}
           </div>
-          {/* Weeks */}
           {weeks.map((week, wi) => {
             const firstDay = week[0];
             const showMonth = firstDay.getDate() <= 7;
             return (
               <div key={wi} style={{ display: "flex", flexDirection: "column", gap: GAP }}>
                 <div style={{ height: 16, fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: "16px", whiteSpace: "nowrap", fontWeight: 500 }}>
-                  {showMonth ? MONTHS[firstDay.getMonth()] : ""}
+                  {showMonth ? MONTH_SHORT[firstDay.getMonth()] : ""}
                 </div>
                 {week.map((day, di) => {
                   const dateStr = localDateStr(day);
-                  const todayStr = localDateStr(today);
                   const isFuture = dateStr > todayStr;
+                  const isBeforeFirstLog = !firstLogDate || dateStr < firstLogDate;
                   const isOnline = onlineDates.has(dateStr);
                   const isToday = dateStr === todayStr;
-                  const isBeforeFirstLog = !firstLogDate || dateStr < firstLogDate;
-
                   let bg, shadow;
-                  if (isFuture || isBeforeFirstLog) {
-                    bg = "rgba(255,255,255,0.04)";
-                    shadow = "none";
-                  } else if (isOnline) {
-                    bg = "#C9A84C";
-                    shadow = "0 0 5px rgba(201,168,76,0.5)";
-                  } else {
-                    bg = "rgba(239,68,68,0.28)";
-                    shadow = "none";
-                  }
-
+                  if (isFuture || isBeforeFirstLog) { bg = "rgba(255,255,255,0.04)"; shadow = "none"; }
+                  else if (isOnline) { bg = "#C9A84C"; shadow = "0 0 5px rgba(201,168,76,0.5)"; }
+                  else { bg = "rgba(239,68,68,0.28)"; shadow = "none"; }
                   return (
                     <div
                       key={di}
-                      title={`${dateStr}${isToday ? " · TODAY" : ""} · ${isFuture ? "" : isOnline ? "online" : "missed"}`}
+                      title={`${dateStr}${isToday ? " · TODAY" : ""}${!isFuture && !isBeforeFirstLog ? (isOnline ? " · online" : " · missed") : ""}`}
                       style={{
-                        width: CELL,
-                        height: CELL,
-                        borderRadius: 3,
-                        background: bg,
-                        boxShadow: shadow,
-                        outline: isToday ? "2px solid rgba(255,255,255,0.9)" : "none",
+                        width: CELL, height: CELL, borderRadius: 3,
+                        background: bg, boxShadow: shadow,
+                        outline: isToday ? "2px solid rgba(255,255,255,0.85)" : "none",
                         outlineOffset: "1px",
-                        transition: "background 0.15s",
                       }}
                     />
                   );
@@ -1145,24 +1250,7 @@ function StreakCalendar({ dailyLog, createdAt }) {
           })}
         </div>
       </div>
-      <div style={{ display: "flex", gap: 16, marginTop: 14, alignItems: "center", flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 10, height: 10, borderRadius: 2, background: "#C9A84C" }} />
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Online</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 10, height: 10, borderRadius: 2, background: "rgba(239,68,68,0.35)" }} />
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Missed</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 10, height: 10, borderRadius: 2, background: "rgba(255,255,255,0.06)" }} />
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>No data</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 10, height: 10, borderRadius: 2, outline: "2px solid rgba(255,255,255,0.9)", outlineOffset: "1px" }} />
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Today</span>
-        </div>
-      </div>
+      <CalendarLegend />
     </div>
   );
 }
