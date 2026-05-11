@@ -355,7 +355,7 @@ export default function Dashboard() {
         <nav style={styles.tabBar}>
           {[
             { id: "proview", label: "ProView" },
-            { id: "profile", label: "Profile" },
+            { id: "consistency", label: "Your Consistency" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -366,6 +366,13 @@ export default function Dashboard() {
               {activeTab === tab.id && <div style={styles.tabIndicator} />}
             </button>
           ))}
+          <button
+            onClick={() => setActiveTab("profile")}
+            style={{ ...styles.tab, ...(activeTab === "profile" ? styles.tabActive : {}), marginLeft: "auto" }}
+          >
+            Profile
+            {activeTab === "profile" && <div style={styles.tabIndicator} />}
+          </button>
         </nav>
 
         {/* ── Content ── */}
@@ -456,6 +463,12 @@ export default function Dashboard() {
                   )}
                 </>
               )}
+            </div>
+          )}
+
+          {activeTab === "consistency" && (
+            <div style={{ padding: "48px 32px", color: "rgba(255,255,255,0.25)", fontSize: 14, textAlign: "center" }}>
+              Coming soon.
             </div>
           )}
 
