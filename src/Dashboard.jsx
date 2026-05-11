@@ -64,6 +64,7 @@ export default function Dashboard() {
   /* full video meta for local cross-filtering */
   const [allVideoMeta, setAllVideoMeta] = useState([]);
   const [activeTab, setActiveTab] = useState("proview");
+  const [contactOpen, setContactOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const fetchSeq = useRef(0);
@@ -478,6 +479,38 @@ export default function Dashboard() {
             </div>
           )}
         </main>
+
+        {/* ── Contact button ── */}
+        <button
+          onClick={() => setContactOpen(true)}
+          title="Report Bug / Contact"
+          style={styles.contactBtn}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+            e.currentTarget.querySelector("span").style.opacity = "1";
+            e.currentTarget.querySelector("span").style.transform = "translateX(0)";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+            e.currentTarget.querySelector("span").style.opacity = "0";
+            e.currentTarget.querySelector("span").style.transform = "translateX(-6px)";
+          }}
+        >
+          📱
+          <span style={styles.contactLabel}>Report Bug / Contact</span>
+        </button>
+
+        {/* ── Contact modal ── */}
+        {contactOpen && (
+          <div style={styles.modalOverlay} onClick={() => setContactOpen(false)}>
+            <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
+              <p style={styles.modalTitle}>Contact / Report Bug</p>
+              <p style={styles.modalSub}>Reach us at</p>
+              <a href="mailto:vantage@vntg.com.pl" style={styles.modalEmail}>vantage@vntg.com.pl</a>
+              <button onClick={() => setContactOpen(false)} style={styles.modalClose}>Close</button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
@@ -1009,4 +1042,14 @@ const styles = {
   loadingScreen: { minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#000", gap: 16 },
   loadingPulse: { width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(201,168,76,0.2)", borderTopColor: "#C9A84C", animation: "spin 0.8s linear infinite" },
   loadingText: { fontFamily: "'Outfit', sans-serif", fontSize: 14, color: "rgba(255,255,255,0.3)" },
+
+  contactBtn: { position: "fixed", bottom: 24, left: 24, zIndex: 50, display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 100, padding: "10px 16px", cursor: "pointer", transition: "background 0.2s", fontFamily: "'Outfit', sans-serif" },
+  contactLabel: { fontSize: 12, color: "rgba(255,255,255,0.5)", fontWeight: 500, letterSpacing: 0.3, opacity: 0, transform: "translateX(-6px)", transition: "opacity 0.2s, transform 0.2s", whiteSpace: "nowrap" },
+
+  modalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" },
+  modalBox: { background: "#0e0e12", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "36px 40px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12, minWidth: 320 },
+  modalTitle: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: 1 },
+  modalSub: { fontSize: 13, color: "rgba(255,255,255,0.3)", fontFamily: "'Outfit', sans-serif" },
+  modalEmail: { fontSize: 15, color: "#C9A84C", fontFamily: "'Outfit', sans-serif", fontWeight: 600, textDecoration: "none", letterSpacing: 0.3 },
+  modalClose: { marginTop: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 100, padding: "8px 24px", color: "rgba(255,255,255,0.5)", fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: "pointer" },
 };
