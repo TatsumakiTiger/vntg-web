@@ -1103,10 +1103,8 @@ function StreakCalendar({ dailyLog, createdAt }) {
                   const todayStr = localDateStr(today);
                   const isFuture = dateStr > todayStr;
                   const isOnline = onlineDates.has(dateStr);
-                  const isBeforeFirstLog = !firstLogDate || dateStr < firstLogDate;
-
                   const isToday = dateStr === todayStr;
-                  const isBeforeFirstLog = firstLogDate ? dateStr < firstLogDate : true;
+                  const isBeforeFirstLog = !firstLogDate || dateStr < firstLogDate;
 
                   let bg, shadow;
                   if (isFuture || isBeforeFirstLog) {
