@@ -1048,13 +1048,18 @@ function StreakCalendar({ dailyLog, createdAt }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Start from first login day, not account creation
+  const MAX_WEEKS = 16;
+
+  // Start from first login day, capped at MAX_WEEKS back
   const anchorDate = firstLogDate ? new Date(firstLogDate) : new Date(today);
   anchorDate.setHours(0, 0, 0, 0);
-  const anchorDay = anchorDate.getDay();
+  const earliest = new Date(today);
+  earliest.setDate(today.getDate() - MAX_WEEKS * 7);
+  const clampedAnchor = anchorDate < earliest ? earliest : anchorDate;
+  const anchorDay = clampedAnchor.getDay();
   const daysToMonday = anchorDay === 0 ? 6 : anchorDay - 1;
-  const startMonday = new Date(anchorDate);
-  startMonday.setDate(anchorDate.getDate() - daysToMonday);
+  const startMonday = new Date(clampedAnchor);
+  startMonday.setDate(clampedAnchor.getDate() - daysToMonday);
 
   const weeks = [];
   const cur = new Date(startMonday);
