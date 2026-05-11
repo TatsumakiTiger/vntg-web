@@ -341,6 +341,9 @@ export default function Dashboard() {
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
         @keyframes glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.7; } }
         @keyframes starBounce { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 60% { transform: translateY(-3px); } }
+        @keyframes flicker { 0%, 100% { transform: translateX(-50%) scaleY(1) rotate(-1deg); } 25% { transform: translateX(-50%) scaleY(1.06) rotate(1.5deg); } 50% { transform: translateX(-50%) scaleY(0.94) rotate(-1.5deg); } 75% { transform: translateX(-50%) scaleY(1.03) rotate(1deg); } }
+        @keyframes innerFlicker { 0%, 100% { transform: translateX(-50%) scaleY(1); opacity: 0.9; } 50% { transform: translateX(-50%) scaleY(0.82) rotate(2deg); opacity: 0.7; } }
+        @keyframes flameGlow { 0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(1); } 50% { opacity: 0.85; transform: translateX(-50%) scale(1.15); } }
       `}</style>
 
       <div style={styles.root}>
@@ -485,7 +488,7 @@ export default function Dashboard() {
           )}
 
           {activeTab === "profile" && (
-            <div style={{ animation: "fadeUp 0.4s ease-out" }}>
+            <div style={{ animation: "fadeUp 0.4s ease-out", display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
               <ProfileCard
                 user={user}
                 subscribedAgent={subscribedAgent}
@@ -495,6 +498,7 @@ export default function Dashboard() {
                   setTimeout(() => setSubscribeOpen(true), 100);
                 }}
               />
+              <StreakCard user={user} />
             </div>
           )}
         </main>
@@ -952,6 +956,175 @@ function ProfileField({ label, value }) {
     <div style={styles.profileField}>
       <span style={styles.profileLabel}>{label}</span>
       <span style={styles.profileValue}>{value}</span>
+    </div>
+  );
+}
+
+function VntgFlame() {
+  return (
+    <div style={{ position: "relative", width: 32, height: 48, flexShrink: 0 }}>
+      <div style={{
+        position: "absolute", bottom: 0, left: "50%",
+        transform: "translateX(-50%)",
+        width: 48, height: 48, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(201,168,76,0.28) 0%, transparent 70%)",
+        animation: "flameGlow 1.4s ease-in-out infinite",
+      }} />
+      <div style={{
+        position: "absolute", bottom: 0, left: "50%",
+        transform: "translateX(-50%)",
+        width: 22, height: 42,
+        background: "linear-gradient(to top, #c85a00 0%, #E8850A 25%, #C9A84C 55%, #fff8c0 85%, transparent 100%)",
+        borderRadius: "50% 50% 28% 28% / 58% 58% 28% 28%",
+        animation: "flicker 0.85s ease-in-out infinite",
+      }} />
+      <div style={{
+        position: "absolute", bottom: 0, left: "50%",
+        transform: "translateX(-50%)",
+        width: 12, height: 26,
+        background: "linear-gradient(to top, #fff 0%, #fffbe6 35%, #C9A84C 75%, transparent 100%)",
+        borderRadius: "50% 50% 28% 28% / 58% 58% 28% 28%",
+        animation: "innerFlicker 0.65s ease-in-out infinite",
+      }} />
+    </div>
+  );
+}
+
+function StreakCard({ user }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16, flexShrink: 0 }}>
+      {/* Streak counter block */}
+      <div style={{
+        background: "rgba(201,168,76,0.06)",
+        border: "1px solid rgba(201,168,76,0.18)",
+        borderRadius: 16,
+        padding: "20px 24px",
+        display: "flex",
+        alignItems: "center",
+        gap: 20,
+        minWidth: 220,
+      }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 2, color: "rgba(201,168,76,0.6)", textTransform: "uppercase", marginBottom: 6 }}>
+            VNTG STREAK
+          </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{ fontSize: 40, fontWeight: 700, color: "#fff", letterSpacing: -1, lineHeight: 1 }}>
+              {user.streak || 0}
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 400, color: "rgba(255,255,255,0.35)" }}>
+              {(user.streak || 0) === 1 ? "day" : "days"}
+            </span>
+          </div>
+        </div>
+        <VntgFlame />
+      </div>
+
+      {/* Calendar block */}
+      <div style={{
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 16,
+        padding: "20px 24px",
+      }}>
+        <StreakCalendar dailyLog={user.daily_log || []} createdAt={user.created_at} />
+      </div>
+    </div>
+  );
+}
+
+function StreakCalendar({ dailyLog, createdAt }) {
+  const onlineDates = new Set(dailyLog);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const joinDate = createdAt ? new Date(createdAt) : new Date(today);
+  joinDate.setHours(0, 0, 0, 0);
+  const joinDay = joinDate.getDay();
+  const daysToMonday = joinDay === 0 ? 6 : joinDay - 1;
+  const startMonday = new Date(joinDate);
+  startMonday.setDate(joinDate.getDate() - daysToMonday);
+
+  const weeks = [];
+  const cur = new Date(startMonday);
+  while (cur <= today) {
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(cur);
+      day.setDate(cur.getDate() + d);
+      week.push(new Date(day));
+    }
+    weeks.push(week);
+    cur.setDate(cur.getDate() + 7);
+  }
+
+  const DAY_INITIALS = ["M", "T", "W", "T", "F", "S", "S"];
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  return (
+    <div>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 2, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", marginBottom: 14 }}>
+        Activity Calendar
+      </div>
+      <div style={{ overflowX: "auto", paddingBottom: 4 }}>
+        <div style={{ display: "flex", gap: 3, minWidth: "max-content" }}>
+          {/* Day labels */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 3, paddingTop: 18 }}>
+            {DAY_INITIALS.map((d, i) => (
+              <div key={i} style={{ width: 10, height: 10, fontSize: 8, color: "rgba(255,255,255,0.2)", lineHeight: "10px", textAlign: "right" }}>
+                {i % 2 === 0 ? d : ""}
+              </div>
+            ))}
+          </div>
+          {/* Weeks */}
+          {weeks.map((week, wi) => {
+            const firstDay = week[0];
+            const showMonth = firstDay.getDate() <= 7;
+            return (
+              <div key={wi} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <div style={{ height: 14, fontSize: 9, color: "rgba(255,255,255,0.25)", lineHeight: "14px", whiteSpace: "nowrap" }}>
+                  {showMonth ? MONTHS[firstDay.getMonth()] : ""}
+                </div>
+                {week.map((day, di) => {
+                  const dateStr = day.toISOString().split("T")[0];
+                  const isFuture = day > today;
+                  const isOnline = onlineDates.has(dateStr);
+                  const isBeforeJoin = day < joinDate;
+                  return (
+                    <div
+                      key={di}
+                      title={isFuture || isBeforeJoin ? "" : `${dateStr}${isOnline ? " · online" : " · missed"}`}
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: 2,
+                        background: isFuture || isBeforeJoin
+                          ? "rgba(255,255,255,0.03)"
+                          : isOnline
+                            ? "#C9A84C"
+                            : "rgba(239,68,68,0.22)",
+                        boxShadow: isOnline ? "0 0 4px rgba(201,168,76,0.45)" : "none",
+                        transition: "background 0.2s",
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 14, marginTop: 12, alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <div style={{ width: 8, height: 8, borderRadius: 2, background: "#C9A84C" }} />
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Online</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <div style={{ width: 8, height: 8, borderRadius: 2, background: "rgba(239,68,68,0.3)" }} />
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Missed</span>
+        </div>
+      </div>
     </div>
   );
 }
