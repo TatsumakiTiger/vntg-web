@@ -69,6 +69,8 @@ export default function Dashboard() {
   const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [streakHistoryOpen, setStreakHistoryOpen] = useState(false);
   const [xpOpen, setXpOpen] = useState(false);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [leaderboard, setLeaderboard] = useState(null);
   const [subscribedAgent, setSubscribedAgent] = useState(null);
   const [selectedAgent, setSelectedAgent] = useState("");
   const navigate = useNavigate();
@@ -586,6 +588,37 @@ export default function Dashboard() {
               btn.style.background = "rgba(255,255,255,0.03)";
             }}
           >
+            <span style={styles.contactLabel}>Leaderboard</span>
+            <button
+              onClick={() => {
+                setLeaderboardOpen(true);
+                if (!leaderboard) {
+                  const token = readToken();
+                  fetch(`${API_URL}/api/leaderboard`, { headers: { Authorization: `Bearer ${token}` } })
+                    .then(r => r.json())
+                    .then(setLeaderboard)
+                    .catch(() => setLeaderboard([]));
+                }
+              }}
+              style={styles.contactBtn}
+            >🏆</button>
+          </div>
+
+          <div
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
+            onMouseEnter={e => {
+              const lbl = e.currentTarget.querySelector("span");
+              const btn = e.currentTarget.querySelector("button");
+              lbl.style.opacity = "1"; lbl.style.transform = "translateY(0)";
+              btn.style.background = "rgba(255,255,255,0.08)";
+            }}
+            onMouseLeave={e => {
+              const lbl = e.currentTarget.querySelector("span");
+              const btn = e.currentTarget.querySelector("button");
+              lbl.style.opacity = "0"; lbl.style.transform = "translateY(4px)";
+              btn.style.background = "rgba(255,255,255,0.03)";
+            }}
+          >
             <span style={styles.contactLabel}>Contact</span>
             <button onClick={() => setContactOpen(true)} style={styles.contactBtn}>📱</button>
           </div>
@@ -609,6 +642,55 @@ export default function Dashboard() {
             <div style={{ ...styles.modalBox, gap: 0, padding: "40px 44px", minWidth: 320 }} onClick={e => e.stopPropagation()}>
               <XpModalContent user={user} />
               <button onClick={() => setXpOpen(false)} style={{ ...styles.modalClose, marginTop: 24, alignSelf: "center" }}>Close</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Leaderboard modal ── */}
+        {leaderboardOpen && (
+          <div style={styles.modalOverlay} onClick={() => setLeaderboardOpen(false)}>
+            <div style={{ ...styles.modalBox, alignItems: "stretch", minWidth: 360, maxWidth: 480, gap: 0 }} onClick={e => e.stopPropagation()}>
+              <p style={{ ...styles.modalTitle, marginBottom: 20 }}>Leaderboard</p>
+              {!leaderboard ? (
+                <div style={{ textAlign: "center", padding: "24px 0", color: "rgba(255,255,255,0.25)", fontSize: 13 }}>Loading…</div>
+              ) : leaderboard.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "24px 0", color: "rgba(255,255,255,0.25)", fontSize: 13 }}>No data yet.</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {leaderboard.map((entry) => {
+                    const { level, color, progress } = getLevel(entry.xp);
+                    const isMe = user && entry.discord_id === user.id;
+                    const rankEmoji = entry.rank === 1 ? "🥇" : entry.rank === 2 ? "🥈" : entry.rank === 3 ? "🥉" : `#${entry.rank}`;
+                    const avatarUrl = entry.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(entry.nick)}&background=1a1a2e&color=fff&size=64&bold=true&format=svg`;
+                    return (
+                      <div
+                        key={entry.discord_id}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 12,
+                          padding: "10px 14px", borderRadius: 10,
+                          background: isMe ? "rgba(201,168,76,0.08)" : "rgba(255,255,255,0.03)",
+                          border: `1px solid ${isMe ? "rgba(201,168,76,0.25)" : "rgba(255,255,255,0.06)"}`,
+                        }}
+                      >
+                        <span style={{ width: 28, fontSize: entry.rank <= 3 ? 20 : 13, color: "rgba(255,255,255,0.4)", textAlign: "center", flexShrink: 0 }}>{rankEmoji}</span>
+                        <img src={avatarUrl} alt="" style={{ width: 36, height: 36, borderRadius: "50%", border: `2px solid ${color}`, objectFit: "cover", flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: isMe ? "#C9A84C" : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {entry.nick}{isMe ? " (ty)" : ""}
+                            </span>
+                            <span style={{ fontSize: 12, color, fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>
+                              Lv.{level} · {entry.xp} XP
+                            </span>
+                          </div>
+                          <XpBar progress={progress} color={color} height={3} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <button onClick={() => setLeaderboardOpen(false)} style={{ ...styles.modalClose, marginTop: 20, alignSelf: "center" }}>Close</button>
             </div>
           </div>
         )}
