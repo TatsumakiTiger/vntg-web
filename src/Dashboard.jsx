@@ -63,9 +63,9 @@ export default function Dashboard() {
   const [filterOptions, setFilterOptions] = useState({ agents: [], maps: [], players: [] });
   /* full video meta for local cross-filtering */
   const [allVideoMeta, setAllVideoMeta] = useState([]);
-  const [activeTab, setActiveTab] = useState("proview");
-  const [contactOpen, setContactOpen] = useState(false);
   const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "proview");
+  const [contactOpen, setContactOpen] = useState(false);
   const navigate = useNavigate();
   const fetchSeq = useRef(0);
   const loadMoreRef = useRef(() => {});

@@ -110,7 +110,7 @@ export default function ScrollScene() {
                   <div className="goto-divider" />
                   <div className="goto-options">
                     <button onClick={() => navigate("/dashboard")} className="goto-opt">Pro View</button>
-                    <button className="goto-opt goto-disabled">Example</button>
+                    <button onClick={() => navigate("/dashboard?tab=consistency")} className="goto-opt">Your Consistency</button>
                     <button className="goto-opt goto-disabled">Example</button>
                   </div>
                 </div>
