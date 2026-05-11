@@ -1104,6 +1104,8 @@ function StreakCalendar({ dailyLog, createdAt }) {
                   const isOnline = onlineDates.has(dateStr);
                   const isBeforeFirstLog = !firstLogDate || dateStr < firstLogDate;
 
+                  const isToday = dateStr === todayStr;
+
                   let bg, shadow;
                   if (isFuture || isBeforeFirstLog) {
                     bg = "rgba(255,255,255,0.04)";
@@ -1119,15 +1121,16 @@ function StreakCalendar({ dailyLog, createdAt }) {
                   return (
                     <div
                       key={di}
-                      title={isFuture || isBeforeFirstLog ? "" : `${dateStr} · ${isOnline ? "online" : "missed"}`}
+                      title={`${dateStr}${isToday ? " · TODAY" : ""}${!isFuture && !isBeforeFirstLog ? (isOnline ? " · online" : " · missed") : ""}`}
                       style={{
                         width: CELL,
                         height: CELL,
                         borderRadius: 3,
                         background: bg,
                         boxShadow: shadow,
+                        outline: isToday ? "2px solid rgba(255,255,255,0.9)" : "none",
+                        outlineOffset: "1px",
                         transition: "background 0.15s",
-                        cursor: isFuture || isBeforeFirstLog ? "default" : "default",
                       }}
                     />
                   );
@@ -1137,7 +1140,7 @@ function StreakCalendar({ dailyLog, createdAt }) {
           })}
         </div>
       </div>
-      <div style={{ display: "flex", gap: 16, marginTop: 14, alignItems: "center" }}>
+      <div style={{ display: "flex", gap: 16, marginTop: 14, alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{ width: 10, height: 10, borderRadius: 2, background: "#C9A84C" }} />
           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Online</span>
@@ -1149,6 +1152,10 @@ function StreakCalendar({ dailyLog, createdAt }) {
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div style={{ width: 10, height: 10, borderRadius: 2, background: "rgba(255,255,255,0.06)" }} />
           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>No data</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: 2, outline: "2px solid rgba(255,255,255,0.9)", outlineOffset: "1px" }} />
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Today</span>
         </div>
       </div>
     </div>
