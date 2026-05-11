@@ -108,7 +108,7 @@ export default function ScrollScene() {
                   <span className="goto-label">Explore &rarr;</span>
                   <div className="goto-divider" />
                   <div className="goto-options">
-                    <button onClick={go} className="goto-opt">Dashboard</button>
+                    <button onClick={() => navigate("/dashboard")} className="goto-opt">Pro View</button>
                     <button className="goto-opt goto-disabled">Example</button>
                     <button className="goto-opt goto-disabled">Example</button>
                   </div>
