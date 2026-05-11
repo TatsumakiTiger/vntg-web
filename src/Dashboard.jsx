@@ -362,7 +362,6 @@ export default function Dashboard() {
           {[
             { id: "proview", label: "ProView" },
             { id: "consistency", label: "Vlingo" },
-            { id: "analyzer", label: "Game Sense" },
           ].map((tab) => (
             <button
               key={tab.id}
