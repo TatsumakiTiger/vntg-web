@@ -35,6 +35,8 @@ export default function ScrollScene() {
   const [show, setShow] = useState(false);
   const [sy, setSy] = useState(0);
   const [contactOpen, setContactOpen] = useState(false);
+  const [gotoReady, setGotoReady] = useState(false);
+  const gotoTimer = useRef(null);
 
   useEffect(() => {
     const K = "vntg_session";
@@ -105,10 +107,14 @@ export default function ScrollScene() {
                 <span className="hero-tag hero-tag-welcome">Welcome</span>
                 <h1 className="hero-big"><span className="gold-text">{nick}</span></h1>
                 <p className="hero-p">Your competitive edge awaits.</p>
-                <div className="goto-wrap">
+                <div
+                  className="goto-wrap"
+                  onMouseEnter={() => { gotoTimer.current = setTimeout(() => setGotoReady(true), 800); }}
+                  onMouseLeave={() => { clearTimeout(gotoTimer.current); setGotoReady(false); }}
+                >
                   <span className="goto-label">Explore &rarr;</span>
                   <div className="goto-divider" />
-                  <div className="goto-options">
+                  <div className="goto-options" style={{ pointerEvents: gotoReady ? "all" : "none" }}>
                     <button onClick={() => navigate("/dashboard")} className="goto-opt">Pro View</button>
                     <button onClick={() => navigate("/dashboard?tab=consistency")} className="goto-opt">Your Consistency</button>
                     <button className="goto-opt goto-disabled">Example</button>
