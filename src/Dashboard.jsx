@@ -1033,8 +1033,17 @@ function StreakCard({ user }) {
   );
 }
 
+function localDateStr(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function StreakCalendar({ dailyLog, createdAt }) {
   const onlineDates = new Set(dailyLog);
+  const sortedLog = [...dailyLog].sort();
+  const firstLogDate = sortedLog.length > 0 ? sortedLog[0] : null;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -1059,20 +1068,22 @@ function StreakCalendar({ dailyLog, createdAt }) {
     cur.setDate(cur.getDate() + 7);
   }
 
-  const DAY_INITIALS = ["M", "T", "W", "T", "F", "S", "S"];
+  const CELL = 13;
+  const GAP = 3;
+  const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   return (
     <div>
-      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 2, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", marginBottom: 14 }}>
+      <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: 2, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", marginBottom: 16 }}>
         Activity Calendar
       </div>
       <div style={{ overflowX: "auto", paddingBottom: 4 }}>
-        <div style={{ display: "flex", gap: 3, minWidth: "max-content" }}>
+        <div style={{ display: "flex", gap: GAP, minWidth: "max-content" }}>
           {/* Day labels */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 3, paddingTop: 18 }}>
-            {DAY_INITIALS.map((d, i) => (
-              <div key={i} style={{ width: 10, height: 10, fontSize: 8, color: "rgba(255,255,255,0.2)", lineHeight: "10px", textAlign: "right" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: GAP, paddingTop: 20 }}>
+            {DAY_LABELS.map((d, i) => (
+              <div key={i} style={{ width: 28, height: CELL, fontSize: 10, color: "rgba(255,255,255,0.25)", lineHeight: `${CELL}px`, textAlign: "right", paddingRight: 4 }}>
                 {i % 2 === 0 ? d : ""}
               </div>
             ))}
@@ -1082,30 +1093,41 @@ function StreakCalendar({ dailyLog, createdAt }) {
             const firstDay = week[0];
             const showMonth = firstDay.getDate() <= 7;
             return (
-              <div key={wi} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                <div style={{ height: 14, fontSize: 9, color: "rgba(255,255,255,0.25)", lineHeight: "14px", whiteSpace: "nowrap" }}>
+              <div key={wi} style={{ display: "flex", flexDirection: "column", gap: GAP }}>
+                <div style={{ height: 16, fontSize: 10, color: "rgba(255,255,255,0.3)", lineHeight: "16px", whiteSpace: "nowrap", fontWeight: 500 }}>
                   {showMonth ? MONTHS[firstDay.getMonth()] : ""}
                 </div>
                 {week.map((day, di) => {
-                  const dateStr = day.toISOString().split("T")[0];
-                  const isFuture = day > today;
+                  const dateStr = localDateStr(day);
+                  const todayStr = localDateStr(today);
+                  const isFuture = dateStr > todayStr;
                   const isOnline = onlineDates.has(dateStr);
-                  const isBeforeJoin = day < joinDate;
+                  const isBeforeFirstLog = !firstLogDate || dateStr < firstLogDate;
+
+                  let bg, shadow;
+                  if (isFuture || isBeforeFirstLog) {
+                    bg = "rgba(255,255,255,0.04)";
+                    shadow = "none";
+                  } else if (isOnline) {
+                    bg = "#C9A84C";
+                    shadow = "0 0 5px rgba(201,168,76,0.5)";
+                  } else {
+                    bg = "rgba(239,68,68,0.28)";
+                    shadow = "none";
+                  }
+
                   return (
                     <div
                       key={di}
-                      title={isFuture || isBeforeJoin ? "" : `${dateStr}${isOnline ? " · online" : " · missed"}`}
+                      title={isFuture || isBeforeFirstLog ? "" : `${dateStr} · ${isOnline ? "online" : "missed"}`}
                       style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: 2,
-                        background: isFuture || isBeforeJoin
-                          ? "rgba(255,255,255,0.03)"
-                          : isOnline
-                            ? "#C9A84C"
-                            : "rgba(239,68,68,0.22)",
-                        boxShadow: isOnline ? "0 0 4px rgba(201,168,76,0.45)" : "none",
-                        transition: "background 0.2s",
+                        width: CELL,
+                        height: CELL,
+                        borderRadius: 3,
+                        background: bg,
+                        boxShadow: shadow,
+                        transition: "background 0.15s",
+                        cursor: isFuture || isBeforeFirstLog ? "default" : "default",
                       }}
                     />
                   );
@@ -1115,14 +1137,18 @@ function StreakCalendar({ dailyLog, createdAt }) {
           })}
         </div>
       </div>
-      <div style={{ display: "flex", gap: 14, marginTop: 12, alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <div style={{ width: 8, height: 8, borderRadius: 2, background: "#C9A84C" }} />
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Online</span>
+      <div style={{ display: "flex", gap: 16, marginTop: 14, alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: "#C9A84C" }} />
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Online</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <div style={{ width: 8, height: 8, borderRadius: 2, background: "rgba(239,68,68,0.3)" }} />
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Missed</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: "rgba(239,68,68,0.35)" }} />
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Missed</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: "rgba(255,255,255,0.06)" }} />
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>No data</span>
         </div>
       </div>
     </div>
