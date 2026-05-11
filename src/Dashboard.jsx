@@ -573,7 +573,7 @@ export default function Dashboard() {
           </>
           )}
 
-          <div
+          {activeTab === "profile" && <div
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
             onMouseEnter={e => {
               const lbl = e.currentTarget.querySelector("span");
@@ -602,7 +602,7 @@ export default function Dashboard() {
               }}
               style={styles.contactBtn}
             >🏆</button>
-          </div>
+          </div>}
 
           <div
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
