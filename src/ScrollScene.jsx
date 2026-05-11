@@ -224,7 +224,7 @@ export default function ScrollScene() {
           onMouseEnter={e => { const l = e.currentTarget.querySelector("span"); l.style.opacity="1"; l.style.transform="translateY(0)"; }}
           onMouseLeave={e => { const l = e.currentTarget.querySelector("span"); l.style.opacity="0"; l.style.transform="translateY(4px)"; }}
         >
-          <span className="sc-contact-label">Report Bug</span>
+          <span className="sc-contact-label">Contact</span>
           <button className="sc-contact-btn" onClick={() => setContactOpen(true)}>📱</button>
         </div>
       )}
@@ -234,7 +234,7 @@ export default function ScrollScene() {
         <div className="sc-modal-overlay" onClick={() => setContactOpen(false)}>
           <div className="sc-modal-box" onClick={e => e.stopPropagation()}>
             <p className="sc-modal-title">Contact</p>
-            <p className="sc-modal-sub">Reach us at</p>
+            <p className="sc-modal-sub">Report a bug or reach us at</p>
             <a href="mailto:vantage@vntg.com.pl" className="sc-modal-email">vantage@vntg.com.pl</a>
             <button className="sc-modal-close" onClick={() => setContactOpen(false)}>Close</button>
           </div>
