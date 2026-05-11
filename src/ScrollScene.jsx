@@ -101,16 +101,16 @@ export default function ScrollScene() {
           <div className={`hero-in ${show ? "vis" : ""}`}>
             {user ? (
               <>
-                <span className="hero-tag">Welcome</span>
+                <span className="hero-tag hero-tag-welcome">Welcome</span>
                 <h1 className="hero-big"><span className="gold-text">{nick}</span></h1>
                 <p className="hero-p">Your competitive edge awaits.</p>
                 <div className="goto-wrap">
-                  <span className="goto-label">Go to</span>
+                  <span className="goto-label">Go to &rarr;</span>
                   <div className="goto-divider" />
                   <div className="goto-options">
                     <button onClick={go} className="goto-opt">Dashboard</button>
-                    <button className="goto-opt goto-disabled">Leaderboard</button>
-                    <button className="goto-opt goto-disabled">VOD Library</button>
+                    <button className="goto-opt goto-disabled">Example</button>
+                    <button className="goto-opt goto-disabled">Example</button>
                   </div>
                 </div>
               </>
@@ -241,6 +241,7 @@ body{background:#000;overflow-x:hidden;font-family:'Outfit',sans-serif;color:#ff
 .hero-in.vis{opacity:1;transform:translateY(0)}
 
 .hero-tag{display:inline-block;font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;letter-spacing:5px;color:rgba(255,255,255,0.3);margin-bottom:32px;padding:8px 24px;border:1px solid rgba(255,255,255,0.08);border-radius:100px}
+.hero-tag-welcome{width:160px;text-align:center;box-sizing:border-box}
 
 .hero-big{font-family:'Bebas Neue',sans-serif;font-size:clamp(72px,14vw,180px);line-height:.9;letter-spacing:3px;margin-bottom:32px}
 
@@ -253,8 +254,8 @@ body{background:#000;overflow-x:hidden;font-family:'Outfit',sans-serif;color:#ff
 .cta:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(255,255,255,0.12)}
 .arr{font-size:18px;transition:transform .3s}
 .cta:hover .arr{transform:translateX(5px)}
-.goto-wrap{display:inline-flex;align-items:center;background:#fff;border-radius:100px;padding:16px 28px;gap:0;max-width:160px;overflow:hidden;transition:max-width .5s cubic-bezier(.34,1.2,.64,1),box-shadow .3s;cursor:default;white-space:nowrap}
-.goto-wrap:hover{max-width:520px;box-shadow:0 16px 48px rgba(255,255,255,0.12)}
+.goto-wrap{display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:100px;padding:16px 32px;gap:0;width:160px;max-width:160px;overflow:hidden;transition:max-width .5s cubic-bezier(.34,1.2,.64,1),width .5s cubic-bezier(.34,1.2,.64,1),box-shadow .3s;cursor:default;white-space:nowrap;box-sizing:border-box}
+.goto-wrap:hover{max-width:520px;width:520px;box-shadow:0 16px 48px rgba(255,255,255,0.12)}
 .goto-label{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;color:#000;letter-spacing:.3px;flex-shrink:0}
 .goto-divider{width:1px;height:18px;background:rgba(0,0,0,0.15);margin:0 16px;flex-shrink:0;opacity:0;transition:opacity .2s .15s}
 .goto-wrap:hover .goto-divider{opacity:1}
