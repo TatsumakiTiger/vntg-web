@@ -114,6 +114,15 @@ export default function ScrollScene() {
                     <button className="goto-opt goto-disabled">Example</button>
                   </div>
                 </div>
+
+                {/* ── Report Bug (logged in) ── */}
+                <div className="sc-contact-wrap"
+                  onMouseEnter={e => { const l = e.currentTarget.querySelector("span"); l.style.opacity="1"; l.style.transform="translateY(0)"; }}
+                  onMouseLeave={e => { const l = e.currentTarget.querySelector("span"); l.style.opacity="0"; l.style.transform="translateY(4px)"; }}
+                >
+                  <span className="sc-contact-label">Report Bug</span>
+                  <button className="sc-contact-btn" onClick={() => setContactOpen(true)}>📱</button>
+                </div>
               </>
             ) : (
               <>
@@ -203,32 +212,6 @@ export default function ScrollScene() {
               </div>
             </section>
 
-            {/* ── Contact ── */}
-            <div className="sc-contact-wrap"
-              onMouseEnter={e => {
-                const lbl = e.currentTarget.querySelector("span");
-                lbl.style.opacity = "1"; lbl.style.transform = "translateY(0)";
-              }}
-              onMouseLeave={e => {
-                const lbl = e.currentTarget.querySelector("span");
-                lbl.style.opacity = "0"; lbl.style.transform = "translateY(4px)";
-              }}
-            >
-              <span className="sc-contact-label">Contact</span>
-              <button className="sc-contact-btn" onClick={() => setContactOpen(true)}>📱</button>
-            </div>
-
-            {contactOpen && (
-              <div className="sc-modal-overlay" onClick={() => setContactOpen(false)}>
-                <div className="sc-modal-box" onClick={e => e.stopPropagation()}>
-                  <p className="sc-modal-title">Contact</p>
-                  <p className="sc-modal-sub">Reach us at</p>
-                  <a href="mailto:vantage@vntg.com.pl" className="sc-modal-email">vantage@vntg.com.pl</a>
-                  <button className="sc-modal-close" onClick={() => setContactOpen(false)}>Close</button>
-                </div>
-              </div>
-            )}
-
             {/* ── Footer ── */}
             <footer className="foot">
               <span className="foot-logo">VANTAGE</span>
@@ -236,10 +219,24 @@ export default function ScrollScene() {
               <span className="foot-t">Built for the competitive Valorant community.</span>
               <span className="foot-sep">|</span>
               <span className="foot-disclaimer">Not affiliated with or endorsed by Riot Games.</span>
+              <span className="foot-sep">|</span>
+              <button className="foot-contact" onClick={() => setContactOpen(true)}>Contact</button>
             </footer>
           </>
         )}
       </div>
+
+      {/* ── Contact modal ── */}
+      {contactOpen && (
+        <div className="sc-modal-overlay" onClick={() => setContactOpen(false)}>
+          <div className="sc-modal-box" onClick={e => e.stopPropagation()}>
+            <p className="sc-modal-title">Contact</p>
+            <p className="sc-modal-sub">Reach us at</p>
+            <a href="mailto:vantage@vntg.com.pl" className="sc-modal-email">vantage@vntg.com.pl</a>
+            <button className="sc-modal-close" onClick={() => setContactOpen(false)}>Close</button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -331,6 +328,8 @@ body{background:#000;overflow-x:hidden;font-family:'Outfit',sans-serif;color:#ff
 .foot-sep{color:rgba(255,255,255,0.05)}
 .foot-t{font-size:12px;color:rgba(255,255,255,0.1);font-weight:300}
 .foot-disclaimer{font-size:11px;color:rgba(255,255,255,0.07);font-weight:300}
+.foot-contact{background:none;border:none;font-size:11px;color:rgba(255,255,255,0.15);font-weight:400;cursor:pointer;font-family:'Outfit',sans-serif;letter-spacing:1px;transition:color .2s;padding:0}
+.foot-contact:hover{color:rgba(255,255,255,0.45)}
 .sc-contact-wrap{position:fixed;bottom:24px;left:16px;z-index:50;display:flex;flex-direction:column;align-items:center;gap:8px}
 .sc-contact-label{font-family:'Outfit',sans-serif;font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:1px;white-space:nowrap;opacity:0;transform:translateY(4px);transition:opacity .2s,transform .2s;pointer-events:none}
 .sc-contact-btn{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;transition:background .2s}
