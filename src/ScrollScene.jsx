@@ -115,7 +115,7 @@ export default function ScrollScene() {
               </>
             ) : (
               <>
-                <span className="hero-tag">VALORANT VOD REVIEW PLATFORM</span>
+                <span className="hero-tag">GET CONSISTENT</span>
                 <h1 className="hero-big">
                   MASTER<br />
                   <span className="gold-text">VALORANT</span>
@@ -206,6 +206,8 @@ export default function ScrollScene() {
               <span className="foot-logo">VANTAGE</span>
               <span className="foot-sep">|</span>
               <span className="foot-t">Built for the competitive Valorant community.</span>
+              <span className="foot-sep">|</span>
+              <span className="foot-disclaimer">Not affiliated with or endorsed by Riot Games.</span>
             </footer>
           </>
         )}
@@ -287,6 +289,7 @@ body{background:#000;overflow-x:hidden;font-family:'Outfit',sans-serif;color:#ff
 .foot-logo{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;letter-spacing:5px;color:rgba(255,255,255,0.15)}
 .foot-sep{color:rgba(255,255,255,0.05)}
 .foot-t{font-size:12px;color:rgba(255,255,255,0.1);font-weight:300}
+.foot-disclaimer{font-size:11px;color:rgba(255,255,255,0.07);font-weight:300}
 
 /* ── Fade-in ── */
 .fi{opacity:0;transform:translateY(28px);transition:all .8s cubic-bezier(.16,1,.3,1)}
