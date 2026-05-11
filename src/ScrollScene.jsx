@@ -113,6 +113,7 @@ export default function ScrollScene() {
                     <button className="goto-opt goto-disabled">Example</button>
                   </div>
                 </div>
+                <p className="goto-hint">hover to explore</p>
               </>
             ) : (
               <>
@@ -254,7 +255,7 @@ body{background:#000;overflow-x:hidden;font-family:'Outfit',sans-serif;color:#ff
 .cta:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(255,255,255,0.12)}
 .arr{font-size:18px;transition:transform .3s}
 .cta:hover .arr{transform:translateX(5px)}
-.goto-wrap{display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:100px;padding:16px 32px;gap:0;width:160px;max-width:160px;overflow:hidden;transition:max-width .5s cubic-bezier(.34,1.2,.64,1),width .5s cubic-bezier(.34,1.2,.64,1),box-shadow .3s;cursor:default;white-space:nowrap;box-sizing:border-box}
+.goto-wrap{display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:100px;padding:16px 32px;gap:0;width:160px;max-width:160px;overflow:hidden;transition:max-width .8s cubic-bezier(.34,1.2,.64,1),width .8s cubic-bezier(.34,1.2,.64,1),box-shadow .4s;cursor:default;white-space:nowrap;box-sizing:border-box}
 .goto-wrap:hover{max-width:520px;width:520px;box-shadow:0 16px 48px rgba(255,255,255,0.12)}
 .goto-label{font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;color:#000;letter-spacing:.3px;flex-shrink:0}
 .goto-divider{width:1px;height:18px;background:rgba(0,0,0,0.15);margin:0 16px;flex-shrink:0;opacity:0;transition:opacity .2s .15s}
@@ -265,6 +266,7 @@ body{background:#000;overflow-x:hidden;font-family:'Outfit',sans-serif;color:#ff
 .goto-opt:hover{background:rgba(0,0,0,0.08)}
 .goto-disabled{opacity:0.35;cursor:default}
 .goto-disabled:hover{background:transparent}
+.goto-hint{font-family:'Outfit',sans-serif;font-size:11px;color:rgba(255,255,255,0.2);letter-spacing:2px;margin-top:14px;text-transform:uppercase}
 
 /* ── Scroll Cue ── */
 .scroll-cue{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;color:rgba(255,255,255,0.15);font-family:'Space Grotesk',sans-serif;font-size:9px;letter-spacing:5px;animation:fl 3s ease-in-out infinite}
