@@ -556,14 +556,14 @@ export default function Dashboard() {
             <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
               <p style={styles.modalTitle}>Agent Subscribe</p>
               <p style={styles.modalSub}>
-                Choose an agent to follow. Whenever a new VOD with that agent drops, you'll get a Discord DM with a link.
+                Select your main. Whenever a new VOD with that agent drops, you'll get a Discord DM with a link.
               </p>
               <select
                 value={selectedAgent || subscribedAgent || ""}
                 onChange={e => setSelectedAgent(e.target.value)}
                 style={styles.subSelect}
               >
-                <option value="">Select an agent to subscribe</option>
+                <option value="">Select your main</option>
                 {Object.keys(AGENT_COLORS).sort().map(a => (
                   <option key={a} value={a}>{a}</option>
                 ))}
