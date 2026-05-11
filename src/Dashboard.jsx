@@ -63,7 +63,7 @@ export default function Dashboard() {
   const [filterOptions, setFilterOptions] = useState({ agents: [], maps: [], players: [] });
   /* full video meta for local cross-filtering */
   const [allVideoMeta, setAllVideoMeta] = useState([]);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "proview");
   const [contactOpen, setContactOpen] = useState(false);
   const navigate = useNavigate();
@@ -360,7 +360,7 @@ export default function Dashboard() {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => { setActiveTab(tab.id); setSearchParams({ tab: tab.id }, { replace: true }); }}
               style={{ ...styles.tab, ...(activeTab === tab.id ? styles.tabActive : {}) }}
             >
               {tab.label}
@@ -368,7 +368,7 @@ export default function Dashboard() {
             </button>
           ))}
           <button
-            onClick={() => setActiveTab("profile")}
+            onClick={() => { setActiveTab("profile"); setSearchParams({ tab: "profile" }, { replace: true }); }}
             style={{ ...styles.tab, ...(activeTab === "profile" ? styles.tabActive : {}), marginLeft: "auto" }}
           >
             Profile
@@ -482,26 +482,25 @@ export default function Dashboard() {
 
         {/* ── Bottom-left buttons ── */}
         <div style={styles.contactWrap}>
-          {activeTab === "proview" && (
-            <div
-              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
-              onMouseEnter={e => {
-                const lbl = e.currentTarget.querySelector("span");
-                const btn = e.currentTarget.querySelector("button");
-                lbl.style.opacity = "1"; lbl.style.transform = "translateY(0)";
-                btn.style.background = "rgba(255,255,255,0.08)";
-              }}
-              onMouseLeave={e => {
-                const lbl = e.currentTarget.querySelector("span");
-                const btn = e.currentTarget.querySelector("button");
-                lbl.style.opacity = "0"; lbl.style.transform = "translateY(4px)";
-                btn.style.background = "rgba(255,255,255,0.03)";
-              }}
-            >
-              <span style={styles.contactLabel}>Subscribe</span>
-              <button style={styles.contactBtn}>⭐</button>
-            </div>
-          )}
+          <div
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, opacity: activeTab === "proview" ? 1 : 0, pointerEvents: activeTab === "proview" ? "all" : "none", transition: "opacity .2s" }}
+            onMouseEnter={e => {
+              if (activeTab !== "proview") return;
+              const lbl = e.currentTarget.querySelector("span");
+              const btn = e.currentTarget.querySelector("button");
+              lbl.style.opacity = "1"; lbl.style.transform = "translateY(0)";
+              btn.style.background = "rgba(255,255,255,0.08)";
+            }}
+            onMouseLeave={e => {
+              const lbl = e.currentTarget.querySelector("span");
+              const btn = e.currentTarget.querySelector("button");
+              lbl.style.opacity = "0"; lbl.style.transform = "translateY(4px)";
+              btn.style.background = "rgba(255,255,255,0.03)";
+            }}
+          >
+            <span style={styles.contactLabel}>Subscribe</span>
+            <button style={styles.contactBtn}>⭐</button>
+          </div>
 
           <div
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
