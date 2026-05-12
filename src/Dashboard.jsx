@@ -71,6 +71,7 @@ export default function Dashboard() {
   const [xpOpen, setXpOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [leaderboard, setLeaderboard] = useState(null);
+  const [analyzerVideo, setAnalyzerVideo] = useState(null);
   const [subscribedAgent, setSubscribedAgent] = useState(null);
   const [selectedAgent, setSelectedAgent] = useState("");
   const navigate = useNavigate();
@@ -270,6 +271,12 @@ export default function Dashboard() {
     return { agents, maps, players };
   }, [allVideoMeta, filterAgent, filterMap, filterPlayer, filterRole, filterOptions]);
 
+  function handleAnalyze(video) {
+    setAnalyzerVideo(video);
+    setActiveTab("analyzer");
+    setSearchParams({ tab: "analyzer" }, { replace: true });
+  }
+
   function handleLogout() {
     try { localStorage.removeItem("vntg_session"); } catch {}
     document.cookie = "vntg_session=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
@@ -369,6 +376,7 @@ export default function Dashboard() {
           {[
             { id: "proview", label: "ProView" },
             { id: "consistency", label: "Vlingo" },
+            { id: "analyzer", label: "Game Analyzer" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -440,7 +448,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div style={styles.grid}>
-                    {localVideos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} />)}
+                    {localVideos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} onAnalyze={handleAnalyze} />)}
                   </div>
                 )
               ) : videosLoading ? (
@@ -461,7 +469,7 @@ export default function Dashboard() {
               ) : (
                 <>
                   <div style={styles.grid}>
-                    {videos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} />)}
+                    {videos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} onAnalyze={handleAnalyze} />)}
                   </div>
                   <div ref={sentinelRef} style={{ height: 1 }} />
                   {loadingMore && (
@@ -486,8 +494,51 @@ export default function Dashboard() {
           )}
 
           {activeTab === "analyzer" && (
-            <div style={{ padding: "48px 32px", color: "rgba(255,255,255,0.25)", fontSize: 14, textAlign: "center" }}>
-              Coming soon.
+            <div style={{ animation: "fadeUp 0.4s ease-out", maxWidth: 860, margin: "0 auto" }}>
+              {analyzerVideo ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "20px 24px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Selected game</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{analyzerVideo.player}</span>
+                        <span style={{ fontSize: 13, color: AGENT_COLORS[analyzerVideo.agent] || "#888", fontWeight: 600 }}>{analyzerVideo.agent}</span>
+                        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>·</span>
+                        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>{analyzerVideo.map}</span>
+                        {analyzerVideo.channel && (
+                          <>
+                            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>·</span>
+                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>📺 {analyzerVideo.channel}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <a
+                      href={`https://www.youtube.com/watch?v=${analyzerVideo.video_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ flexShrink: 0, padding: "7px 16px", borderRadius: 7, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", fontSize: 11, fontWeight: 600, textDecoration: "none", letterSpacing: 0.5 }}
+                    >
+                      ▶ Watch
+                    </a>
+                    <button
+                      onClick={() => setAnalyzerVideo(null)}
+                      style={{ flexShrink: 0, padding: "7px 14px", borderRadius: 7, background: "none", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.3)", fontSize: 11, cursor: "pointer" }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div style={{ padding: "48px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 13 }}>
+                    Analysis coming soon.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: "80px 24px", textAlign: "center" }}>
+                  <div style={{ fontSize: 32, marginBottom: 16, opacity: 0.15 }}>🔍</div>
+                  <p style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", marginBottom: 6 }}>No game selected</p>
+                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.15)" }}>Go to ProView and click Analyze on any VOD</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -787,9 +838,10 @@ export default function Dashboard() {
 }
 
 /* ── VOD Card ── */
-function VodCard({ video, index }) {
+function VodCard({ video, index, onAnalyze }) {
   const [hovered, setHovered] = useState(false);
   const [watchHovered, setWatchHovered] = useState(false);
+  const [analyzeHovered, setAnalyzeHovered] = useState(false);
   const role = AGENT_ROLES[video.agent] || "Duelist";
   const roleColor = ROLE_COLORS[role] || "#fff";
   const agentColor = AGENT_COLORS[video.agent] || "#888";
@@ -858,16 +910,18 @@ function VodCard({ video, index }) {
             ▶ Watch
           </a>
           <button
-            disabled
+            onClick={() => onAnalyze && onAnalyze(video)}
+            onMouseEnter={() => setAnalyzeHovered(true)}
+            onMouseLeave={() => setAnalyzeHovered(false)}
             style={{
               flex: 1,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
               padding: "6px 0", borderRadius: 6,
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.05)",
-              color: "rgba(255,255,255,0.18)",
+              background: analyzeHovered ? "rgba(201,168,76,0.1)" : "rgba(255,255,255,0.02)",
+              border: `1px solid ${analyzeHovered ? "rgba(201,168,76,0.3)" : "rgba(255,255,255,0.07)"}`,
+              color: analyzeHovered ? "#C9A84C" : "rgba(255,255,255,0.35)",
               fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
-              cursor: "not-allowed",
+              cursor: "pointer", transition: "all 0.15s",
             }}
           >
             🔍 Analyze
