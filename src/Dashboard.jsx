@@ -502,38 +502,9 @@ export default function Dashboard() {
           )}
 
           {activeTab === "analyzer" && (
-            <div style={{ animation: "fadeUp 0.4s ease-out", maxWidth: 860, margin: "0 auto" }}>
+            <div style={{ animation: "fadeUp 0.4s ease-out", maxWidth: 900, margin: "0 auto" }}>
               {analyzerVideo ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "20px 24px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Selected game</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{analyzerVideo.player}</span>
-                        <span style={{ fontSize: 13, color: AGENT_COLORS[analyzerVideo.agent] || "#888", fontWeight: 600 }}>{analyzerVideo.agent}</span>
-                        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>·</span>
-                        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>{analyzerVideo.map}</span>
-                      </div>
-                    </div>
-                    <a
-                      href={`https://www.youtube.com/watch?v=${analyzerVideo.video_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ flexShrink: 0, padding: "7px 16px", borderRadius: 7, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", fontSize: 11, fontWeight: 600, textDecoration: "none", letterSpacing: 0.5 }}
-                    >
-                      ▶ Watch
-                    </a>
-                    <button
-                      onClick={clearAnalyzerVideo}
-                      style={{ flexShrink: 0, padding: "7px 14px", borderRadius: 7, background: "none", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.3)", fontSize: 11, cursor: "pointer" }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div style={{ padding: "48px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 13 }}>
-                    Analysis coming soon.
-                  </div>
-                </div>
+                <GameAnalyzerView video={analyzerVideo} onClear={clearAnalyzerVideo} />
               ) : (
                 <div style={{ padding: "80px 24px", textAlign: "center" }}>
                   <div style={{ fontSize: 32, marginBottom: 16, opacity: 0.15 }}>🔍</div>
@@ -853,6 +824,126 @@ export default function Dashboard() {
         )}
       </div>
     </>
+  );
+}
+
+/* ── Game Analyzer View ── */
+function GameAnalyzerView({ video, onClear }) {
+  const [phase, setPhase] = useState("hero"); // "hero" | "fading" | "working"
+  const agentColor = AGENT_COLORS[video.agent] || "#888";
+
+  function handleReady() {
+    setPhase("fading");
+    setTimeout(() => setPhase("working"), 420);
+  }
+
+  const isHero = phase === "hero";
+  const isWorking = phase === "working";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+      {/* ── Main card — shrinks on transition ── */}
+      <div style={{
+        background: "rgba(255,255,255,0.03)",
+        border: `1px solid ${isHero ? `${agentColor}22` : "rgba(255,255,255,0.07)"}`,
+        borderRadius: 14,
+        overflow: "hidden",
+        transition: "padding 0.45s cubic-bezier(0.4,0,0.2,1), border-color 0.4s",
+        padding: isHero ? "72px 40px" : "14px 20px",
+      }}>
+
+        {/* Hero content */}
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center",
+          transition: "opacity 0.25s ease, transform 0.35s ease",
+          opacity: phase === "fading" ? 0 : 1,
+          transform: phase === "fading" ? "scale(0.96) translateY(-6px)" : "scale(1) translateY(0)",
+          pointerEvents: isHero ? "auto" : "none",
+          position: isWorking ? "absolute" : "static",
+          visibility: isWorking ? "hidden" : "visible",
+        }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", letterSpacing: 3, textTransform: "uppercase", marginBottom: 20 }}>
+            Now analyzing
+          </div>
+          <div style={{ fontSize: 56, fontWeight: 800, color: "#fff", letterSpacing: 1, lineHeight: 1, marginBottom: 10 }}>
+            {video.player}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48 }}>
+            <span style={{ fontSize: 15, color: agentColor, fontWeight: 600, letterSpacing: 0.5 }}>{video.agent}</span>
+            <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>·</span>
+            <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map}</span>
+          </div>
+          <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.88)", marginBottom: 24, letterSpacing: 0.3 }}>
+            First, open your VOD
+          </p>
+          <a
+            href={`https://www.youtube.com/watch?v=${video.video_id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
+              padding: "10px 26px", borderRadius: 8, marginBottom: 20,
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: "rgba(255,255,255,0.65)",
+              fontSize: 13, fontWeight: 600, textDecoration: "none", letterSpacing: 0.5,
+              transition: "all 0.15s",
+            }}
+          >
+            ▶ Open on YouTube
+          </a>
+          <button
+            onClick={handleReady}
+            style={{
+              padding: "12px 36px", borderRadius: 9,
+              background: "rgba(201,168,76,0.08)",
+              border: "1px solid rgba(201,168,76,0.35)",
+              color: "#C9A84C",
+              fontSize: 14, fontWeight: 600, letterSpacing: 0.5,
+              cursor: "pointer", transition: "all 0.2s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(201,168,76,0.15)"; e.currentTarget.style.borderColor = "rgba(201,168,76,0.6)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(201,168,76,0.08)"; e.currentTarget.style.borderColor = "rgba(201,168,76,0.35)"; }}
+          >
+            I've opened it →
+          </button>
+        </div>
+
+        {/* Collapsed header */}
+        {isWorking && (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, animation: "fadeUp 0.3s ease-out" }}>
+            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{video.player}</span>
+              <span style={{ fontSize: 12, color: agentColor, fontWeight: 600 }}>{video.agent}</span>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>·</span>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{video.map}</span>
+            </div>
+            <a
+              href={`https://www.youtube.com/watch?v=${video.video_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ flexShrink: 0, fontSize: 11, color: "rgba(255,255,255,0.5)", textDecoration: "none", padding: "5px 12px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+            >
+              ▶ Watch
+            </a>
+            <button
+              onClick={onClear}
+              style={{ flexShrink: 0, background: "none", border: "none", color: "rgba(255,255,255,0.2)", fontSize: 13, cursor: "pointer", padding: "4px 6px" }}
+            >✕</button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Steps ── */}
+      {isWorking && (
+        <div style={{ animation: "fadeUp 0.45s ease-out 0.1s both", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ padding: "48px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, textAlign: "center", color: "rgba(255,255,255,0.18)", fontSize: 13 }}>
+            More steps coming soon…
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
