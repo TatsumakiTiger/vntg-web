@@ -135,12 +135,6 @@ export default function Dashboard() {
       });
   }, []);
 
-  /* ── TEMP: XP toast preview — remove before final commit ── */
-  useEffect(() => {
-    const id = setInterval(() => showXpToast(20), 4000);
-    return () => clearInterval(id);
-  }, []);
-
   /* ── Base filter options (fast, populates dropdowns instantly) ── */
   useEffect(() => {
     fetch(`${API_URL}/api/videos/filters`)
