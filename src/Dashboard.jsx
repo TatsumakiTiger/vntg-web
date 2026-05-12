@@ -577,24 +577,6 @@ export default function Dashboard() {
             <span style={styles.contactLabel}>XP History</span>
             <button onClick={() => setXpOpen(true)} style={styles.contactBtn}>⚡</button>
           </div>
-          <div
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
-            onMouseEnter={e => {
-              const lbl = e.currentTarget.querySelector("span");
-              const btn = e.currentTarget.querySelector("button");
-              lbl.style.opacity = "1"; lbl.style.transform = "translateY(0)";
-              btn.style.background = "rgba(255,255,255,0.08)";
-            }}
-            onMouseLeave={e => {
-              const lbl = e.currentTarget.querySelector("span");
-              const btn = e.currentTarget.querySelector("button");
-              lbl.style.opacity = "0"; lbl.style.transform = "translateY(4px)";
-              btn.style.background = "rgba(255,255,255,0.03)";
-            }}
-          >
-            <span style={styles.contactLabel}>Streak</span>
-            <button onClick={() => setStreakHistoryOpen(true)} style={styles.contactBtn}>🔥</button>
-          </div>
           </>
           )}
 
