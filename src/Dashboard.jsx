@@ -789,21 +789,20 @@ export default function Dashboard() {
 /* ── VOD Card ── */
 function VodCard({ video, index }) {
   const [hovered, setHovered] = useState(false);
+  const [watchHovered, setWatchHovered] = useState(false);
   const role = AGENT_ROLES[video.agent] || "Duelist";
   const roleColor = ROLE_COLORS[role] || "#fff";
   const agentColor = AGENT_COLORS[video.agent] || "#888";
 
   return (
-    <a
-      href={`https://www.youtube.com/watch?v=${video.video_id}`}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       style={{
         ...styles.card,
         animationDelay: `${Math.min(index * 0.05, 0.3)}s`,
         transform: hovered ? "translateY(-2px)" : "none",
         borderColor: hovered ? `${agentColor}33` : "rgba(255,255,255,0.06)",
         boxShadow: hovered ? `0 8px 32px ${agentColor}15, 0 0 0 1px ${agentColor}22` : "none",
+        cursor: "default",
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -833,11 +832,52 @@ function VodCard({ video, index }) {
         </div>
         {video.channel && (
           <div style={styles.cardMeta}>
-            <span style={styles.metaItem}>📺 {video.channel}</span>
+            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", display: "flex", alignItems: "center", gap: 3 }}>
+              <span style={{ fontSize: 9 }}>📺</span>{video.channel}
+            </span>
           </div>
         )}
+        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+          <a
+            href={`https://www.youtube.com/watch?v=${video.video_id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onMouseEnter={() => setWatchHovered(true)}
+            onMouseLeave={() => setWatchHovered(false)}
+            style={{
+              flex: 1,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+              padding: "6px 0", borderRadius: 6,
+              background: watchHovered ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.06)",
+              border: `1px solid ${watchHovered ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.1)"}`,
+              color: watchHovered ? "#fff" : "rgba(255,255,255,0.75)",
+              fontSize: 11, fontWeight: 600, textDecoration: "none",
+              letterSpacing: 0.5, transition: "all 0.15s",
+            }}
+          >
+            ▶ Watch
+          </a>
+          <button
+            disabled
+            style={{
+              flex: 1,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+              padding: "6px 0", borderRadius: 6,
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.05)",
+              color: "rgba(255,255,255,0.18)",
+              fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
+              cursor: "not-allowed",
+            }}
+          >
+            🔍 Analyze
+          </button>
+        </div>
+        <div style={{ marginTop: 7, fontSize: 9, color: "rgba(255,255,255,0.13)", fontFamily: "monospace", letterSpacing: 0.3 }}>
+          {video.video_id}
+        </div>
       </div>
-    </a>
+    </div>
   );
 }
 
@@ -1709,7 +1749,7 @@ const styles = {
 
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 },
 
-  card: { display: "block", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, overflow: "hidden", textDecoration: "none", color: "inherit", transition: "all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)", animation: "fadeUp 0.5s ease-out both" },
+  card: { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, overflow: "hidden", color: "inherit", transition: "all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)", animation: "fadeUp 0.5s ease-out both" },
   thumbWrap: { position: "relative", aspectRatio: "16/9", overflow: "hidden", background: "#0a0a0f" },
   cardBody: { padding: "12px 14px" },
   cardTop: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
