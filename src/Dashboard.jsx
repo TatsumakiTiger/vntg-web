@@ -456,7 +456,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div style={styles.grid}>
-                    {localVideos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} onAnalyze={handleAnalyze} />)}
+                    {localVideos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} />)}
                   </div>
                 )
               ) : videosLoading ? (
@@ -477,7 +477,7 @@ export default function Dashboard() {
               ) : (
                 <>
                   <div style={styles.grid}>
-                    {videos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} onAnalyze={handleAnalyze} />)}
+                    {videos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} />)}
                   </div>
                   <div ref={sentinelRef} style={{ height: 1 }} />
                   {loadingMore && (
@@ -583,29 +583,6 @@ export default function Dashboard() {
               style={{ ...styles.contactBtn, animation: subscribedAgent ? "none" : "starBounce 2s ease-in-out infinite" }}
               onClick={() => setSubscribeOpen(true)}
             >⭐</button>
-          </div>
-
-          <div
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, opacity: activeTab === "proview" ? 1 : 0, pointerEvents: activeTab === "proview" ? "all" : "none", transition: "opacity .2s" }}
-            onMouseEnter={e => {
-              if (activeTab !== "proview") return;
-              const lbl = e.currentTarget.querySelector("span");
-              const btn = e.currentTarget.querySelector("button");
-              lbl.style.opacity = "1"; lbl.style.transform = "translateY(0)";
-              btn.style.background = analyzerVideo ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.08)";
-            }}
-            onMouseLeave={e => {
-              const lbl = e.currentTarget.querySelector("span");
-              const btn = e.currentTarget.querySelector("button");
-              lbl.style.opacity = "0"; lbl.style.transform = "translateY(4px)";
-              btn.style.background = analyzerVideo ? "rgba(201,168,76,0.08)" : "rgba(255,255,255,0.03)";
-            }}
-          >
-            <span style={styles.contactLabel}>Analyzer</span>
-            <button
-              onClick={() => { setActiveTab("analyzer"); setSearchParams({ tab: "analyzer" }, { replace: true }); }}
-              style={{ ...styles.contactBtn, background: analyzerVideo ? "rgba(201,168,76,0.08)" : "rgba(255,255,255,0.03)", border: analyzerVideo ? "1px solid rgba(201,168,76,0.3)" : "1px solid rgba(255,255,255,0.06)" }}
-            >🔍</button>
           </div>
 
           {activeTab === "profile" && (
@@ -880,10 +857,9 @@ export default function Dashboard() {
 }
 
 /* ── VOD Card ── */
-function VodCard({ video, index, onAnalyze }) {
+function VodCard({ video, index }) {
   const [hovered, setHovered] = useState(false);
   const [watchHovered, setWatchHovered] = useState(false);
-  const [analyzeHovered, setAnalyzeHovered] = useState(false);
   const role = AGENT_ROLES[video.agent] || "Duelist";
   const roleColor = ROLE_COLORS[role] || "#fff";
   const agentColor = AGENT_COLORS[video.agent] || "#888";
@@ -931,7 +907,7 @@ function VodCard({ video, index, onAnalyze }) {
             </span>
           </div>
         )}
-        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+        <div style={{ marginTop: 10 }}>
           <a
             href={`https://www.youtube.com/watch?v=${video.video_id}`}
             target="_blank"
@@ -939,7 +915,6 @@ function VodCard({ video, index, onAnalyze }) {
             onMouseEnter={() => setWatchHovered(true)}
             onMouseLeave={() => setWatchHovered(false)}
             style={{
-              flex: 1,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
               padding: "6px 0", borderRadius: 6,
               background: watchHovered ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.06)",
@@ -951,23 +926,6 @@ function VodCard({ video, index, onAnalyze }) {
           >
             ▶ Watch
           </a>
-          <button
-            onClick={() => onAnalyze && onAnalyze(video)}
-            onMouseEnter={() => setAnalyzeHovered(true)}
-            onMouseLeave={() => setAnalyzeHovered(false)}
-            style={{
-              flex: 1,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-              padding: "6px 0", borderRadius: 6,
-              background: analyzeHovered ? "rgba(201,168,76,0.1)" : "rgba(255,255,255,0.02)",
-              border: `1px solid ${analyzeHovered ? "rgba(201,168,76,0.3)" : "rgba(255,255,255,0.07)"}`,
-              color: analyzeHovered ? "#C9A84C" : "rgba(255,255,255,0.35)",
-              fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
-              cursor: "pointer", transition: "all 0.15s",
-            }}
-          >
-            Analyze
-          </button>
         </div>
       </div>
     </div>

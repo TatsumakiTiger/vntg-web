@@ -116,8 +116,8 @@ export default function ScrollScene() {
                   <div className="goto-divider" />
                   <div className="goto-options" style={{ pointerEvents: gotoReady ? "all" : "none" }}>
                     <button onClick={() => navigate("/dashboard")} className="goto-opt">Pro View</button>
-                    <button onClick={() => navigate("/dashboard?tab=consistency")} className="goto-opt">Vlingo</button>
                     <button onClick={() => navigate("/dashboard?tab=analyzer")} className="goto-opt">Game Analyzer</button>
+                    <button onClick={() => navigate("/dashboard?tab=consistency")} className="goto-opt">Vlingo</button>
                     <button onClick={() => navigate("/dashboard?tab=profile")} className="goto-opt">Profile</button>
                   </div>
                 </div>
