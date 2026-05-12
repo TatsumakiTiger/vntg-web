@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 const API_URL =
@@ -291,7 +292,10 @@ export default function Dashboard() {
   }
 
   function clearAnalyzerVideo() {
-    try { localStorage.removeItem("vntg_analyzer_video"); } catch {}
+    try {
+      localStorage.removeItem("vntg_analyzer_video");
+      localStorage.removeItem("vntg_analyzer_phase");
+    } catch {}
     setAnalyzerVideo(null);
   }
 
@@ -947,50 +951,68 @@ function GameAnalyzerView({ video, onClear }) {
   const isFixed = ["shrunk", "moving", "typing", "working"].includes(phase);
   const showText = phase === "typing" || phase === "working";
 
-  /* ── Compact fixed HUD ── */
+  /* ── Compact fixed HUD — portaled to body to escape fadeUp transform ── */
   if (isFixed) {
     const pos = phase === "shrunk" ? fixedStart : cornerPos;
+    const hud = createPortal(
+      <div style={{
+        position: "fixed",
+        top: pos?.top ?? cornerPos.top,
+        left: pos?.left ?? cornerPos.left,
+        zIndex: 100,
+        background: "rgba(8,8,12,0.92)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 10,
+        backdropFilter: "blur(16px)",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: showText && typedCount > 0 ? 10 : 0,
+        padding: "7px",
+        transition: phase === "moving" ? "top 0.9s cubic-bezier(0.4,0,0.2,1), left 0.9s cubic-bezier(0.4,0,0.2,1)" : "none",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+      }}>
+        {/* Discreet ▶ */}
+        <a
+          href={`https://www.youtube.com/watch?v=${video.video_id}`}
+          target="_blank" rel="noopener noreferrer"
+          style={{
+            width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center",
+            borderRadius: 7, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+            color: "rgba(255,255,255,0.55)", fontSize: 10, textDecoration: "none", flexShrink: 0,
+            transition: "background 0.15s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.13)"}
+          onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
+        >▶</a>
+
+        {/* Typed colored info */}
+        {showText && typedCount > 0 && (
+          <span style={{ fontSize: 11, whiteSpace: "nowrap", letterSpacing: 0.2, paddingLeft: 2, paddingRight: 4 }}>
+            {renderInfo(typedCount)}
+            {phase === "typing" && <span style={{ color: "rgba(255,255,255,0.4)", animation: "blink 0.6s step-end infinite" }}>|</span>}
+          </span>
+        )}
+
+        {/* Cancel */}
+        {phase === "working" && (
+          <button
+            onClick={onClear}
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: "rgba(255,255,255,0.2)", fontSize: 11, lineHeight: 1,
+              padding: "0 2px 0 4px", transition: "color 0.15s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.6)"}
+            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.2)"}
+          >✕</button>
+        )}
+      </div>,
+      document.body
+    );
+
     return (
       <>
-        <div style={{
-          position: "fixed",
-          top: pos?.top ?? cornerPos.top,
-          left: pos?.left ?? cornerPos.left,
-          zIndex: 100,
-          background: "rgba(8,8,12,0.92)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 10,
-          backdropFilter: "blur(16px)",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: showText && typedCount > 0 ? 10 : 0,
-          padding: "7px",
-          transition: phase === "moving" ? "top 0.9s cubic-bezier(0.4,0,0.2,1), left 0.9s cubic-bezier(0.4,0,0.2,1)" : "none",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
-        }}>
-          {/* Discreet ▶ */}
-          <a
-            href={`https://www.youtube.com/watch?v=${video.video_id}`}
-            target="_blank" rel="noopener noreferrer"
-            style={{
-              width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center",
-              borderRadius: 7, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-              color: "rgba(255,255,255,0.55)", fontSize: 10, textDecoration: "none", flexShrink: 0,
-              transition: "background 0.15s",
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.13)"}
-            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
-          >▶</a>
-
-          {/* Typed colored info */}
-          {showText && typedCount > 0 && (
-            <span style={{ fontSize: 11, whiteSpace: "nowrap", letterSpacing: 0.2, paddingRight: 5 }}>
-              {renderInfo(typedCount)}
-              {phase === "typing" && <span style={{ color: "rgba(255,255,255,0.4)", animation: "blink 0.6s step-end infinite" }}>|</span>}
-            </span>
-          )}
-        </div>
-
+        {hud}
         {showText && (
           <div style={{ animation: "fadeUp 0.4s ease-out both", display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={{ padding: "48px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, textAlign: "center", color: "rgba(255,255,255,0.18)", fontSize: 13 }}>
@@ -1995,7 +2017,7 @@ const styles = {
   root: { minHeight: "100vh", background: "#000", fontFamily: "'Outfit', sans-serif", color: "#fff", position: "relative" },
   ambientGlow: { position: "fixed", top: -200, right: -200, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)", pointerEvents: "none", animation: "glow 8s ease-in-out infinite" },
 
-  header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 32px", borderBottom: "2px solid rgba(255,255,255,0.18)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 50, background: "rgba(0,0,0,0.85)" },
+  header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 32px", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 50, background: "rgba(0,0,0,0.85)" },
   headerLeft: { display: "flex", alignItems: "center", gap: 10 },
   logo: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, letterSpacing: 6, fontWeight: 700, color: "#fff" },
   logoBeta: { fontSize: 9, fontWeight: 600, letterSpacing: 2, color: "rgba(201,168,76,0.9)", background: "rgba(201,168,76,0.12)", padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" },
@@ -2004,7 +2026,7 @@ const styles = {
   headerName: { fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.7)" },
   logoutBtn: { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)", padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "all 0.2s", fontFamily: "'Outfit', sans-serif" },
 
-  tabBar: { display: "flex", gap: 4, padding: "0 32px", borderBottom: "2px solid rgba(255,255,255,0.18)", background: "rgba(0,0,0,0.6)" },
+  tabBar: { display: "flex", gap: 4, padding: "0 32px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.6)" },
   tab: { position: "relative", background: "none", border: "none", color: "rgba(255,255,255,0.35)", padding: "14px 20px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "color 0.2s", letterSpacing: 0.5 },
   tabActive: { color: "#fff" },
   tabIndicator: { position: "absolute", bottom: 0, left: 20, right: 20, height: 2, background: "linear-gradient(90deg, #C9A84C, #E8D5A0)", borderRadius: "2px 2px 0 0" },
