@@ -71,7 +71,9 @@ export default function Dashboard() {
   const [xpOpen, setXpOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [leaderboard, setLeaderboard] = useState(null);
-  const [analyzerVideo, setAnalyzerVideo] = useState(null);
+  const [analyzerVideo, setAnalyzerVideo] = useState(() => {
+    try { const s = localStorage.getItem("vntg_analyzer_video"); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
   const [subscribedAgent, setSubscribedAgent] = useState(null);
   const [selectedAgent, setSelectedAgent] = useState("");
   const navigate = useNavigate();
@@ -272,9 +274,15 @@ export default function Dashboard() {
   }, [allVideoMeta, filterAgent, filterMap, filterPlayer, filterRole, filterOptions]);
 
   function handleAnalyze(video) {
+    try { localStorage.setItem("vntg_analyzer_video", JSON.stringify(video)); } catch {}
     setAnalyzerVideo(video);
     setActiveTab("analyzer");
     setSearchParams({ tab: "analyzer" }, { replace: true });
+  }
+
+  function clearAnalyzerVideo() {
+    try { localStorage.removeItem("vntg_analyzer_video"); } catch {}
+    setAnalyzerVideo(null);
   }
 
   function handleLogout() {
@@ -375,8 +383,8 @@ export default function Dashboard() {
         <nav style={styles.tabBar}>
           {[
             { id: "proview", label: "ProView" },
-            { id: "consistency", label: "Vlingo" },
             { id: "analyzer", label: "Game Analyzer" },
+            { id: "consistency", label: "Vlingo" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -505,12 +513,6 @@ export default function Dashboard() {
                         <span style={{ fontSize: 13, color: AGENT_COLORS[analyzerVideo.agent] || "#888", fontWeight: 600 }}>{analyzerVideo.agent}</span>
                         <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>·</span>
                         <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>{analyzerVideo.map}</span>
-                        {analyzerVideo.channel && (
-                          <>
-                            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>·</span>
-                            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>📺 {analyzerVideo.channel}</span>
-                          </>
-                        )}
                       </div>
                     </div>
                     <a
@@ -522,7 +524,7 @@ export default function Dashboard() {
                       ▶ Watch
                     </a>
                     <button
-                      onClick={() => setAnalyzerVideo(null)}
+                      onClick={clearAnalyzerVideo}
                       style={{ flexShrink: 0, padding: "7px 14px", borderRadius: 7, background: "none", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.3)", fontSize: 11, cursor: "pointer" }}
                     >
                       ✕
@@ -581,6 +583,29 @@ export default function Dashboard() {
               style={{ ...styles.contactBtn, animation: subscribedAgent ? "none" : "starBounce 2s ease-in-out infinite" }}
               onClick={() => setSubscribeOpen(true)}
             >⭐</button>
+          </div>
+
+          <div
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, opacity: activeTab === "proview" ? 1 : 0, pointerEvents: activeTab === "proview" ? "all" : "none", transition: "opacity .2s" }}
+            onMouseEnter={e => {
+              if (activeTab !== "proview") return;
+              const lbl = e.currentTarget.querySelector("span");
+              const btn = e.currentTarget.querySelector("button");
+              lbl.style.opacity = "1"; lbl.style.transform = "translateY(0)";
+              btn.style.background = analyzerVideo ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.08)";
+            }}
+            onMouseLeave={e => {
+              const lbl = e.currentTarget.querySelector("span");
+              const btn = e.currentTarget.querySelector("button");
+              lbl.style.opacity = "0"; lbl.style.transform = "translateY(4px)";
+              btn.style.background = analyzerVideo ? "rgba(201,168,76,0.08)" : "rgba(255,255,255,0.03)";
+            }}
+          >
+            <span style={styles.contactLabel}>Analyzer</span>
+            <button
+              onClick={() => { setActiveTab("analyzer"); setSearchParams({ tab: "analyzer" }, { replace: true }); }}
+              style={{ ...styles.contactBtn, background: analyzerVideo ? "rgba(201,168,76,0.08)" : "rgba(255,255,255,0.03)", border: analyzerVideo ? "1px solid rgba(201,168,76,0.3)" : "1px solid rgba(255,255,255,0.06)" }}
+            >🔍</button>
           </div>
 
           {activeTab === "profile" && (
@@ -766,6 +791,23 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* ── Analyzer chip (top-right) ── */}
+        {analyzerVideo && activeTab !== "analyzer" && (
+          <div style={{ position: "fixed", top: 14, right: 20, zIndex: 200, display: "flex", alignItems: "center", gap: 8, padding: "6px 10px 6px 12px", background: "rgba(10,10,15,0.92)", border: "1px solid rgba(201,168,76,0.25)", borderRadius: 8, backdropFilter: "blur(12px)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+            <button
+              onClick={() => { setActiveTab("analyzer"); setSearchParams({ tab: "analyzer" }, { replace: true }); }}
+              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, padding: 0 }}
+            >
+              <span style={{ fontSize: 10, color: "#C9A84C", fontWeight: 700, letterSpacing: 0.5 }}>🔍</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: 600 }}>{analyzerVideo.player}</span>
+              <span style={{ fontSize: 10, color: AGENT_COLORS[analyzerVideo.agent] || "#888" }}>{analyzerVideo.agent}</span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>·</span>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>{analyzerVideo.map}</span>
+            </button>
+            <button onClick={clearAnalyzerVideo} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.25)", fontSize: 11, lineHeight: 1, padding: "0 0 0 4px" }}>✕</button>
+          </div>
+        )}
+
         {/* ── Subscribe modal ── */}
         {subscribeOpen && (
           <div style={styles.modalOverlay} onClick={() => setSubscribeOpen(false)}>
@@ -924,7 +966,7 @@ function VodCard({ video, index, onAnalyze }) {
               cursor: "pointer", transition: "all 0.15s",
             }}
           >
-            🔍 Analyze
+            Analyze
           </button>
         </div>
       </div>
