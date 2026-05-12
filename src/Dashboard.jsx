@@ -352,6 +352,7 @@ export default function Dashboard() {
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; }
+        html { overflow-y: scroll; scrollbar-gutter: stable; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
@@ -741,7 +742,7 @@ export default function Dashboard() {
 
         {/* ── Analyzer chip (top-right) ── */}
         {analyzerVideo && activeTab !== "analyzer" && (
-          <div style={{ position: "fixed", top: 14, right: 20, zIndex: 200, display: "flex", alignItems: "center", gap: 8, padding: "6px 10px 6px 12px", background: "rgba(10,10,15,0.92)", border: "1px solid rgba(201,168,76,0.25)", borderRadius: 8, backdropFilter: "blur(12px)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+          <div style={{ position: "fixed", top: 14, right: 270, zIndex: 200, display: "flex", alignItems: "center", gap: 8, padding: "6px 10px 6px 12px", background: "rgba(10,10,15,0.92)", border: "1px solid rgba(201,168,76,0.25)", borderRadius: 8, backdropFilter: "blur(12px)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
             <button
               onClick={() => { setActiveTab("analyzer"); setSearchParams({ tab: "analyzer" }, { replace: true }); }}
               style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, padding: 0 }}
@@ -1873,7 +1874,7 @@ function Select({ value, onChange, placeholder, options, locked = false }) {
    Styles
    ══════════════════════════════════════════ */
 const styles = {
-  root: { minHeight: "100vh", background: "#000", fontFamily: "'Outfit', sans-serif", color: "#fff", position: "relative", overflow: "hidden" },
+  root: { minHeight: "100vh", background: "#000", fontFamily: "'Outfit', sans-serif", color: "#fff", position: "relative" },
   ambientGlow: { position: "fixed", top: -200, right: -200, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)", pointerEvents: "none", animation: "glow 8s ease-in-out infinite" },
 
   header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 32px", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 50, background: "rgba(0,0,0,0.85)" },
