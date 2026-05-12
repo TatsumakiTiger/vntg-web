@@ -965,7 +965,7 @@ function GameAnalyzerView({ video, onClear }) {
           alignItems: "center",
           gap: showText && typedCount > 0 ? 10 : 0,
           padding: "7px",
-          transition: "top 0.9s cubic-bezier(0.4,0,0.2,1), left 0.9s cubic-bezier(0.4,0,0.2,1)",
+          transition: phase === "moving" ? "top 0.9s cubic-bezier(0.4,0,0.2,1), left 0.9s cubic-bezier(0.4,0,0.2,1)" : "none",
           boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
         }}>
           {/* Discreet ▶ */}
@@ -1995,7 +1995,7 @@ const styles = {
   root: { minHeight: "100vh", background: "#000", fontFamily: "'Outfit', sans-serif", color: "#fff", position: "relative" },
   ambientGlow: { position: "fixed", top: -200, right: -200, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)", pointerEvents: "none", animation: "glow 8s ease-in-out infinite" },
 
-  header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 32px", borderBottom: "1px solid rgba(255,255,255,0.06)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 50, background: "rgba(0,0,0,0.85)" },
+  header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 32px", borderBottom: "2px solid rgba(255,255,255,0.18)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 50, background: "rgba(0,0,0,0.85)" },
   headerLeft: { display: "flex", alignItems: "center", gap: 10 },
   logo: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, letterSpacing: 6, fontWeight: 700, color: "#fff" },
   logoBeta: { fontSize: 9, fontWeight: 600, letterSpacing: 2, color: "rgba(201,168,76,0.9)", background: "rgba(201,168,76,0.12)", padding: "2px 8px", borderRadius: 4, textTransform: "uppercase" },
@@ -2004,7 +2004,7 @@ const styles = {
   headerName: { fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.7)" },
   logoutBtn: { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)", padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 500, cursor: "pointer", transition: "all 0.2s", fontFamily: "'Outfit', sans-serif" },
 
-  tabBar: { display: "flex", gap: 4, padding: "0 32px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.6)" },
+  tabBar: { display: "flex", gap: 4, padding: "0 32px", borderBottom: "2px solid rgba(255,255,255,0.18)", background: "rgba(0,0,0,0.6)" },
   tab: { position: "relative", background: "none", border: "none", color: "rgba(255,255,255,0.35)", padding: "14px 20px", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "color 0.2s", letterSpacing: 0.5 },
   tabActive: { color: "#fff" },
   tabIndicator: { position: "absolute", bottom: 0, left: 20, right: 20, height: 2, background: "linear-gradient(90deg, #C9A84C, #E8D5A0)", borderRadius: "2px 2px 0 0" },
