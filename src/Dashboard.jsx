@@ -281,7 +281,10 @@ export default function Dashboard() {
   }, [allVideoMeta, filterAgent, filterMap, filterPlayer, filterRole, filterOptions]);
 
   function handleAnalyze(video) {
-    try { localStorage.setItem("vntg_analyzer_video", JSON.stringify(video)); } catch {}
+    try {
+      localStorage.setItem("vntg_analyzer_video", JSON.stringify(video));
+      localStorage.removeItem("vntg_analyzer_phase");
+    } catch {}
     setAnalyzerVideo(video);
     setActiveTab("analyzer");
     setSearchParams({ tab: "analyzer" }, { replace: true });
@@ -766,23 +769,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Analyzer chip (top-right) ── */}
-        {analyzerVideo && activeTab !== "analyzer" && (
-          <div style={{ position: "fixed", top: 14, right: 270, zIndex: 200, display: "flex", alignItems: "center", gap: 8, padding: "6px 10px 6px 12px", background: "rgba(10,10,15,0.92)", border: "1px solid rgba(201,168,76,0.25)", borderRadius: 8, backdropFilter: "blur(12px)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
-            <button
-              onClick={() => { setActiveTab("analyzer"); setSearchParams({ tab: "analyzer" }, { replace: true }); }}
-              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 7, padding: 0 }}
-            >
-              <span style={{ fontSize: 10, color: "#C9A84C", fontWeight: 700, letterSpacing: 0.5 }}>🔍</span>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: 600 }}>{analyzerVideo.player}</span>
-              <span style={{ fontSize: 10, color: AGENT_COLORS[analyzerVideo.agent] || "#888" }}>{analyzerVideo.agent}</span>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>·</span>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>{analyzerVideo.map}</span>
-            </button>
-            <button onClick={clearAnalyzerVideo} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.25)", fontSize: 11, lineHeight: 1, padding: "0 0 0 4px" }}>✕</button>
-          </div>
-        )}
-
         {/* ── Subscribe modal ── */}
         {subscribeOpen && (
           <div style={styles.modalOverlay} onClick={() => setSubscribeOpen(false)}>
@@ -857,12 +843,41 @@ export default function Dashboard() {
 /* ── Game Analyzer View ── */
 function GameAnalyzerView({ video, onClear }) {
   const agentColor = AGENT_COLORS[video.agent] || "#888";
-  // phases: "hero" → "erasing" → "shrunk" → "moving" → "typing" → "working"
-  const [phase, setPhase] = useState("hero");
+
+  // Colored info segments for the HUD
+  const INFO_SEGS = [
+    { text: video.player,    color: "#fff",                   fontWeight: 700 },
+    { text: "  ",            color: "transparent" },
+    { text: video.agent,     color: agentColor,               fontWeight: 600 },
+    { text: " · ",           color: "rgba(255,255,255,0.2)" },
+    { text: video.map,       color: "rgba(255,255,255,0.38)" },
+  ];
+  const FULL_LEN = INFO_SEGS.reduce((s, x) => s + x.text.length, 0);
+
+  // Restore working state from localStorage if same video was already animated
+  const savedPhase = (() => { try { return localStorage.getItem("vntg_analyzer_phase"); } catch { return null; } })();
+  const [phase, setPhase]       = useState(savedPhase === "working" ? "working" : "hero");
   const [charsGone, setCharsGone] = useState(0);
-  const [typedInfo, setTypedInfo] = useState("");
+  const [typedCount, setTypedCount] = useState(savedPhase === "working" ? FULL_LEN : 0);
   const [fixedStart, setFixedStart] = useState(null);
   const boxRef = useRef(null);
+
+  // Compute target corner position once on mount (below sticky header + tabbar)
+  const [cornerPos] = useState(() => {
+    const mainEl = document.querySelector("main");
+    if (mainEl) {
+      const r = mainEl.getBoundingClientRect();
+      return { top: r.top + 8, left: r.left + 8 };
+    }
+    return { top: 112, left: 8 };
+  });
+
+  // Persist working phase
+  useEffect(() => {
+    if (phase === "working") {
+      try { localStorage.setItem("vntg_analyzer_phase", "working"); } catch {}
+    }
+  }, [phase]);
 
   const T = "Now analyzing";
   const P = video.player;
@@ -873,7 +888,7 @@ function GameAnalyzerView({ video, onClear }) {
   const cut = (str) => str.slice(0, Math.max(0, str.length - charsGone));
   const isErasing = phase === "erasing";
 
-  /* erase — one char per tick across all texts simultaneously */
+  /* erase — much slower, one char per 90ms */
   useEffect(() => {
     if (phase !== "erasing") return;
     let n = 0;
@@ -888,7 +903,7 @@ function GameAnalyzerView({ video, onClear }) {
         }
         setPhase("shrunk");
       }
-    }, 40);
+    }, 90);
     return () => clearInterval(id);
   }, [phase]);
 
@@ -899,40 +914,48 @@ function GameAnalyzerView({ video, onClear }) {
     return () => clearTimeout(t);
   }, [phase]);
 
-  /* moving → typing (wait for slide animation to finish) */
+  /* moving → typing (wait for slide to finish) */
   useEffect(() => {
     if (phase !== "moving") return;
-    const t = setTimeout(() => setPhase("typing"), 520);
+    const t = setTimeout(() => { setTypedCount(0); setPhase("typing"); }, 1000);
     return () => clearTimeout(t);
   }, [phase]);
 
-  /* type info letter by letter */
+  /* type info letter by letter — 85ms per char */
   useEffect(() => {
     if (phase !== "typing") return;
-    const full = `${video.player}  ${video.agent} · ${video.map}`;
     let i = 0;
-    setTypedInfo("");
     const id = setInterval(() => {
       i++;
-      setTypedInfo(full.slice(0, i));
-      if (i >= full.length) { clearInterval(id); setPhase("working"); }
-    }, 55);
+      setTypedCount(i);
+      if (i >= FULL_LEN) { clearInterval(id); setPhase("working"); }
+    }, 85);
     return () => clearInterval(id);
   }, [phase]);
 
-  const CORNER = { top: 68, left: 20 };
+  // Render colored info from typed count
+  function renderInfo(count) {
+    let rem = count;
+    return INFO_SEGS.map((seg, i) => {
+      if (rem <= 0) return null;
+      const chars = seg.text.slice(0, rem);
+      rem = Math.max(0, rem - seg.text.length);
+      return <span key={i} style={{ color: seg.color, fontWeight: seg.fontWeight || 400 }}>{chars}</span>;
+    });
+  }
+
   const isFixed = ["shrunk", "moving", "typing", "working"].includes(phase);
   const showText = phase === "typing" || phase === "working";
 
-  /* ── Compact fixed HUD (post-animation) ── */
+  /* ── Compact fixed HUD ── */
   if (isFixed) {
-    const pos = phase === "shrunk" ? fixedStart : CORNER;
+    const pos = phase === "shrunk" ? fixedStart : cornerPos;
     return (
       <>
         <div style={{
           position: "fixed",
-          top: pos?.top ?? CORNER.top,
-          left: pos?.left ?? CORNER.left,
+          top: pos?.top ?? cornerPos.top,
+          left: pos?.left ?? cornerPos.left,
           zIndex: 100,
           background: "rgba(8,8,12,0.92)",
           border: "1px solid rgba(255,255,255,0.1)",
@@ -940,12 +963,12 @@ function GameAnalyzerView({ video, onClear }) {
           backdropFilter: "blur(16px)",
           display: "inline-flex",
           alignItems: "center",
-          gap: showText && typedInfo ? 10 : 0,
+          gap: showText && typedCount > 0 ? 10 : 0,
           padding: "7px",
-          transition: "top 0.5s cubic-bezier(0.4,0,0.2,1), left 0.5s cubic-bezier(0.4,0,0.2,1)",
+          transition: "top 0.9s cubic-bezier(0.4,0,0.2,1), left 0.9s cubic-bezier(0.4,0,0.2,1)",
           boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
         }}>
-          {/* Discreet ▶ button */}
+          {/* Discreet ▶ */}
           <a
             href={`https://www.youtube.com/watch?v=${video.video_id}`}
             target="_blank" rel="noopener noreferrer"
@@ -959,16 +982,15 @@ function GameAnalyzerView({ video, onClear }) {
             onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
           >▶</a>
 
-          {/* Typed info */}
-          {showText && typedInfo && (
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap", letterSpacing: 0.2, paddingRight: 5 }}>
-              {typedInfo}
-              {phase === "typing" && <span style={{ animation: "blink 0.6s step-end infinite" }}>|</span>}
+          {/* Typed colored info */}
+          {showText && typedCount > 0 && (
+            <span style={{ fontSize: 11, whiteSpace: "nowrap", letterSpacing: 0.2, paddingRight: 5 }}>
+              {renderInfo(typedCount)}
+              {phase === "typing" && <span style={{ color: "rgba(255,255,255,0.4)", animation: "blink 0.6s step-end infinite" }}>|</span>}
             </span>
           )}
         </div>
 
-        {/* Steps appear after typing is done */}
         {showText && (
           <div style={{ animation: "fadeUp 0.4s ease-out both", display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={{ padding: "48px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, textAlign: "center", color: "rgba(255,255,255,0.18)", fontSize: 13 }}>
@@ -980,9 +1002,9 @@ function GameAnalyzerView({ video, onClear }) {
     );
   }
 
-  /* ── Hero card (including erasing phase) ── */
+  /* ── Hero card (hero + erasing) ── */
   const cur = isErasing
-    ? <span style={{ animation: "blink 0.45s step-end infinite", opacity: 0.6 }}>█</span>
+    ? <span style={{ animation: "blink 0.45s step-end infinite", opacity: 0.5 }}>█</span>
     : null;
 
   return (
@@ -995,17 +1017,14 @@ function GameAnalyzerView({ video, onClear }) {
       }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
 
-          {/* "Now analyzing" */}
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", letterSpacing: 3, textTransform: "uppercase", marginBottom: 20, minHeight: "1.3em" }}>
             {cut(T)}{cut(T) ? cur : null}
           </div>
 
-          {/* Player name */}
           <div style={{ fontSize: 56, fontWeight: 800, color: "#fff", letterSpacing: 1, lineHeight: 1, marginBottom: 10, minHeight: "1.1em" }}>
             {cut(P)}{cut(P) ? cur : null}
           </div>
 
-          {/* Agent · Map */}
           {!isErasing ? (
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48 }}>
               <span style={{ fontSize: 15, color: agentColor, fontWeight: 600, letterSpacing: 0.5 }}>{video.agent}</span>
@@ -1020,12 +1039,10 @@ function GameAnalyzerView({ video, onClear }) {
             </div>
           )}
 
-          {/* "First, open your VOD" */}
           <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.88)", marginBottom: 24, minHeight: "1.3em", letterSpacing: 0.3 }}>
             {cut(H)}{cut(H) ? cur : null}
           </p>
 
-          {/* Open on YouTube — clicking triggers erase animation + opens tab */}
           <a
             href={`https://www.youtube.com/watch?v=${video.video_id}`}
             target="_blank" rel="noopener noreferrer"
