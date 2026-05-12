@@ -873,9 +873,6 @@ function VodCard({ video, index }) {
             🔍 Analyze
           </button>
         </div>
-        <div style={{ marginTop: 7, fontSize: 9, color: "rgba(255,255,255,0.13)", fontFamily: "monospace", letterSpacing: 0.3 }}>
-          {video.video_id}
-        </div>
       </div>
     </div>
   );
