@@ -378,6 +378,7 @@ export default function Dashboard() {
         @keyframes innerFlicker { 0%, 100% { transform: translateX(-50%) scaleY(1); opacity: 0.9; } 50% { transform: translateX(-50%) scaleY(0.82) rotate(2deg); opacity: 0.7; } }
         @keyframes flameGlow { 0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(1); } 50% { opacity: 0.85; transform: translateX(-50%) scale(1.15); } }
         @keyframes xpPop { 0% { opacity:0; transform:translateY(-50%) translateX(6px) scale(0.7); } 18% { opacity:1; transform:translateY(-50%) translateX(-3px) scale(1.08); } 28% { transform:translateY(-50%) translateX(0) scale(1); } 72% { opacity:1; transform:translateY(-50%) translateX(0) scale(1); } 100% { opacity:0; transform:translateY(-50%) translateX(-8px) scale(0.9); } }
+        @keyframes blink { 50% { opacity: 0; } }
       `}</style>
 
       <div style={styles.root}>
@@ -855,120 +856,195 @@ export default function Dashboard() {
 
 /* ── Game Analyzer View ── */
 function GameAnalyzerView({ video, onClear }) {
-  const [phase, setPhase] = useState("hero"); // "hero" | "fading" | "working"
   const agentColor = AGENT_COLORS[video.agent] || "#888";
+  // phases: "hero" → "erasing" → "shrunk" → "moving" → "typing" → "working"
+  const [phase, setPhase] = useState("hero");
+  const [charsGone, setCharsGone] = useState(0);
+  const [typedInfo, setTypedInfo] = useState("");
+  const [fixedStart, setFixedStart] = useState(null);
+  const boxRef = useRef(null);
 
-  function handleReady() {
-    setPhase("fading");
-    setTimeout(() => setPhase("working"), 420);
+  const T = "Now analyzing";
+  const P = video.player;
+  const S = `${video.agent} · ${video.map}`;
+  const H = "First, open your VOD";
+  const B = "▶ Open on YouTube";
+  const MAX = Math.max(T.length, P.length, S.length, H.length, B.length);
+  const cut = (str) => str.slice(0, Math.max(0, str.length - charsGone));
+  const isErasing = phase === "erasing";
+
+  /* erase — one char per tick across all texts simultaneously */
+  useEffect(() => {
+    if (phase !== "erasing") return;
+    let n = 0;
+    const id = setInterval(() => {
+      n++;
+      setCharsGone(n);
+      if (n >= MAX) {
+        clearInterval(id);
+        if (boxRef.current) {
+          const r = boxRef.current.getBoundingClientRect();
+          setFixedStart({ top: r.top + r.height / 2 - 22, left: r.left + r.width / 2 - 22 });
+        }
+        setPhase("shrunk");
+      }
+    }, 40);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  /* shrunk → moving (one frame delay so CSS transition fires) */
+  useEffect(() => {
+    if (phase !== "shrunk") return;
+    const t = setTimeout(() => setPhase("moving"), 30);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  /* moving → typing (wait for slide animation to finish) */
+  useEffect(() => {
+    if (phase !== "moving") return;
+    const t = setTimeout(() => setPhase("typing"), 520);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  /* type info letter by letter */
+  useEffect(() => {
+    if (phase !== "typing") return;
+    const full = `${video.player}  ${video.agent} · ${video.map}`;
+    let i = 0;
+    setTypedInfo("");
+    const id = setInterval(() => {
+      i++;
+      setTypedInfo(full.slice(0, i));
+      if (i >= full.length) { clearInterval(id); setPhase("working"); }
+    }, 55);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  const CORNER = { top: 68, left: 20 };
+  const isFixed = ["shrunk", "moving", "typing", "working"].includes(phase);
+  const showText = phase === "typing" || phase === "working";
+
+  /* ── Compact fixed HUD (post-animation) ── */
+  if (isFixed) {
+    const pos = phase === "shrunk" ? fixedStart : CORNER;
+    return (
+      <>
+        <div style={{
+          position: "fixed",
+          top: pos?.top ?? CORNER.top,
+          left: pos?.left ?? CORNER.left,
+          zIndex: 100,
+          background: "rgba(8,8,12,0.92)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 10,
+          backdropFilter: "blur(16px)",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: showText && typedInfo ? 10 : 0,
+          padding: "7px",
+          transition: "top 0.5s cubic-bezier(0.4,0,0.2,1), left 0.5s cubic-bezier(0.4,0,0.2,1)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+        }}>
+          {/* Discreet ▶ button */}
+          <a
+            href={`https://www.youtube.com/watch?v=${video.video_id}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{
+              width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center",
+              borderRadius: 7, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+              color: "rgba(255,255,255,0.55)", fontSize: 10, textDecoration: "none", flexShrink: 0,
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.13)"}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
+          >▶</a>
+
+          {/* Typed info */}
+          {showText && typedInfo && (
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap", letterSpacing: 0.2, paddingRight: 5 }}>
+              {typedInfo}
+              {phase === "typing" && <span style={{ animation: "blink 0.6s step-end infinite" }}>|</span>}
+            </span>
+          )}
+        </div>
+
+        {/* Steps appear after typing is done */}
+        {showText && (
+          <div style={{ animation: "fadeUp 0.4s ease-out both", display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ padding: "48px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, textAlign: "center", color: "rgba(255,255,255,0.18)", fontSize: 13 }}>
+              More steps coming soon…
+            </div>
+          </div>
+        )}
+      </>
+    );
   }
 
-  const isHero = phase === "hero";
-  const isWorking = phase === "working";
+  /* ── Hero card (including erasing phase) ── */
+  const cur = isErasing
+    ? <span style={{ animation: "blink 0.45s step-end infinite", opacity: 0.6 }}>█</span>
+    : null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-      {/* ── Main card — shrinks on transition ── */}
-      <div style={{
+      <div ref={boxRef} style={{
         background: "rgba(255,255,255,0.03)",
-        border: `1px solid ${isHero ? `${agentColor}22` : "rgba(255,255,255,0.07)"}`,
+        border: `1px solid ${agentColor}22`,
         borderRadius: 14,
-        overflow: "hidden",
-        transition: "padding 0.45s cubic-bezier(0.4,0,0.2,1), border-color 0.4s",
-        padding: isHero ? "72px 40px" : "14px 20px",
+        padding: "72px 40px",
       }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
 
-        {/* Hero content */}
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center",
-          transition: "opacity 0.25s ease, transform 0.35s ease",
-          opacity: phase === "fading" ? 0 : 1,
-          transform: phase === "fading" ? "scale(0.96) translateY(-6px)" : "scale(1) translateY(0)",
-          pointerEvents: isHero ? "auto" : "none",
-          position: isWorking ? "absolute" : "static",
-          visibility: isWorking ? "hidden" : "visible",
-        }}>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", letterSpacing: 3, textTransform: "uppercase", marginBottom: 20 }}>
-            Now analyzing
+          {/* "Now analyzing" */}
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", letterSpacing: 3, textTransform: "uppercase", marginBottom: 20, minHeight: "1.3em" }}>
+            {cut(T)}{cut(T) ? cur : null}
           </div>
-          <div style={{ fontSize: 56, fontWeight: 800, color: "#fff", letterSpacing: 1, lineHeight: 1, marginBottom: 10 }}>
-            {video.player}
+
+          {/* Player name */}
+          <div style={{ fontSize: 56, fontWeight: 800, color: "#fff", letterSpacing: 1, lineHeight: 1, marginBottom: 10, minHeight: "1.1em" }}>
+            {cut(P)}{cut(P) ? cur : null}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48 }}>
-            <span style={{ fontSize: 15, color: agentColor, fontWeight: 600, letterSpacing: 0.5 }}>{video.agent}</span>
-            <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>·</span>
-            <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map}</span>
-          </div>
-          <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.88)", marginBottom: 24, letterSpacing: 0.3 }}>
-            First, open your VOD
+
+          {/* Agent · Map */}
+          {!isErasing ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48 }}>
+              <span style={{ fontSize: 15, color: agentColor, fontWeight: 600, letterSpacing: 0.5 }}>{video.agent}</span>
+              <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>·</span>
+              <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map}</span>
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 48, minHeight: "1.8em" }}>
+              <span style={{ fontSize: 15, color: agentColor, fontWeight: 600 }}>
+                {cut(S)}{cut(S) ? cur : null}
+              </span>
+            </div>
+          )}
+
+          {/* "First, open your VOD" */}
+          <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.88)", marginBottom: 24, minHeight: "1.3em", letterSpacing: 0.3 }}>
+            {cut(H)}{cut(H) ? cur : null}
           </p>
+
+          {/* Open on YouTube — clicking triggers erase animation + opens tab */}
           <a
             href={`https://www.youtube.com/watch?v=${video.video_id}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            target="_blank" rel="noopener noreferrer"
+            onClick={() => !isErasing && setPhase("erasing")}
             style={{
-              display: "inline-flex", alignItems: "center", gap: 7,
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
               padding: "10px 26px", borderRadius: 8, marginBottom: 20,
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "rgba(255,255,255,0.65)",
-              fontSize: 13, fontWeight: 600, textDecoration: "none", letterSpacing: 0.5,
-              transition: "all 0.15s",
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+              color: "rgba(255,255,255,0.65)", fontSize: 13, fontWeight: 600,
+              textDecoration: "none", letterSpacing: 0.5, transition: "all 0.15s",
+              minWidth: "16em", pointerEvents: isErasing ? "none" : "auto",
             }}
+            onMouseEnter={e => { if (!isErasing) { e.currentTarget.style.background = "rgba(255,255,255,0.09)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#fff"; }}}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(255,255,255,0.65)"; }}
           >
-            ▶ Open on YouTube
+            {cut(B)}{cut(B) ? cur : null}
           </a>
-          <button
-            onClick={handleReady}
-            style={{
-              padding: "12px 36px", borderRadius: 9,
-              background: "rgba(201,168,76,0.08)",
-              border: "1px solid rgba(201,168,76,0.35)",
-              color: "#C9A84C",
-              fontSize: 14, fontWeight: 600, letterSpacing: 0.5,
-              cursor: "pointer", transition: "all 0.2s",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(201,168,76,0.15)"; e.currentTarget.style.borderColor = "rgba(201,168,76,0.6)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(201,168,76,0.08)"; e.currentTarget.style.borderColor = "rgba(201,168,76,0.35)"; }}
-          >
-            I've opened it →
-          </button>
         </div>
-
-        {/* Collapsed header */}
-        {isWorking && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, animation: "fadeUp 0.3s ease-out" }}>
-            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{video.player}</span>
-              <span style={{ fontSize: 12, color: agentColor, fontWeight: 600 }}>{video.agent}</span>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>·</span>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{video.map}</span>
-            </div>
-            <a
-              href={`https://www.youtube.com/watch?v=${video.video_id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ flexShrink: 0, fontSize: 11, color: "rgba(255,255,255,0.5)", textDecoration: "none", padding: "5px 12px", borderRadius: 6, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-            >
-              ▶ Watch
-            </a>
-            <button
-              onClick={onClear}
-              style={{ flexShrink: 0, background: "none", border: "none", color: "rgba(255,255,255,0.2)", fontSize: 13, cursor: "pointer", padding: "4px 6px" }}
-            >✕</button>
-          </div>
-        )}
       </div>
-
-      {/* ── Steps ── */}
-      {isWorking && (
-        <div style={{ animation: "fadeUp 0.45s ease-out 0.1s both", display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ padding: "48px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, textAlign: "center", color: "rgba(255,255,255,0.18)", fontSize: 13 }}>
-            More steps coming soon…
-          </div>
-        </div>
-      )}
     </div>
   );
 }
