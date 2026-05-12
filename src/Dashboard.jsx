@@ -383,7 +383,7 @@ export default function Dashboard() {
         @keyframes flicker { 0%, 100% { transform: translateX(-50%) scaleY(1) rotate(-1deg); } 25% { transform: translateX(-50%) scaleY(1.06) rotate(1.5deg); } 50% { transform: translateX(-50%) scaleY(0.94) rotate(-1.5deg); } 75% { transform: translateX(-50%) scaleY(1.03) rotate(1deg); } }
         @keyframes innerFlicker { 0%, 100% { transform: translateX(-50%) scaleY(1); opacity: 0.9; } 50% { transform: translateX(-50%) scaleY(0.82) rotate(2deg); opacity: 0.7; } }
         @keyframes flameGlow { 0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(1); } 50% { opacity: 0.85; transform: translateX(-50%) scale(1.15); } }
-        @keyframes xpPop { 0% { opacity:0; transform:translateX(-50%) translateY(4px) scale(0.7); } 18% { opacity:1; transform:translateX(-50%) translateY(-3px) scale(1.08); } 28% { transform:translateX(-50%) translateY(0) scale(1); } 72% { opacity:1; transform:translateX(-50%) translateY(0) scale(1); } 100% { opacity:0; transform:translateX(-50%) translateY(-10px) scale(0.9); } }
+        @keyframes xpPop { 0% { opacity:0; transform:translateY(-50%) translateX(6px) scale(0.7); } 18% { opacity:1; transform:translateY(-50%) translateX(-3px) scale(1.08); } 28% { transform:translateY(-50%) translateX(0) scale(1); } 72% { opacity:1; transform:translateY(-50%) translateX(0) scale(1); } 100% { opacity:0; transform:translateY(-50%) translateX(-8px) scale(0.9); } }
       `}</style>
 
       <div style={styles.root}>
@@ -401,9 +401,9 @@ export default function Dashboard() {
                   key={xpToast.id}
                   style={{
                     position: "absolute",
-                    top: -22,
-                    left: "50%",
-                    transform: "translateX(-50%)",
+                    top: "50%",
+                    right: "calc(100% + 8px)",
+                    transform: "translateY(-50%)",
                     background: "rgba(10,10,15,0.92)",
                     border: "1px solid rgba(201,168,76,0.55)",
                     borderRadius: 20,
