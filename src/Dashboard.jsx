@@ -456,7 +456,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div style={styles.grid}>
-                    {localVideos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} />)}
+                    {localVideos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} onAnalyze={handleAnalyze} />)}
                   </div>
                 )
               ) : videosLoading ? (
@@ -477,7 +477,7 @@ export default function Dashboard() {
               ) : (
                 <>
                   <div style={styles.grid}>
-                    {videos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} />)}
+                    {videos.map((v, i) => <VodCard key={v.video_id} video={v} index={i} onAnalyze={handleAnalyze} />)}
                   </div>
                   <div ref={sentinelRef} style={{ height: 1 }} />
                   {loadingMore && (
@@ -857,9 +857,10 @@ export default function Dashboard() {
 }
 
 /* ── VOD Card ── */
-function VodCard({ video, index }) {
+function VodCard({ video, index, onAnalyze }) {
   const [hovered, setHovered] = useState(false);
   const [watchHovered, setWatchHovered] = useState(false);
+  const [analyzeHovered, setAnalyzeHovered] = useState(false);
   const role = AGENT_ROLES[video.agent] || "Duelist";
   const roleColor = ROLE_COLORS[role] || "#fff";
   const agentColor = AGENT_COLORS[video.agent] || "#888";
@@ -907,7 +908,7 @@ function VodCard({ video, index }) {
             </span>
           </div>
         )}
-        <div style={{ marginTop: 10 }}>
+        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
           <a
             href={`https://www.youtube.com/watch?v=${video.video_id}`}
             target="_blank"
@@ -915,6 +916,7 @@ function VodCard({ video, index }) {
             onMouseEnter={() => setWatchHovered(true)}
             onMouseLeave={() => setWatchHovered(false)}
             style={{
+              flex: 1,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
               padding: "6px 0", borderRadius: 6,
               background: watchHovered ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.06)",
@@ -926,6 +928,23 @@ function VodCard({ video, index }) {
           >
             ▶ Watch
           </a>
+          <button
+            onClick={() => onAnalyze && onAnalyze(video)}
+            onMouseEnter={() => setAnalyzeHovered(true)}
+            onMouseLeave={() => setAnalyzeHovered(false)}
+            style={{
+              flex: 1,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "6px 0", borderRadius: 6,
+              background: analyzeHovered ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.06)",
+              border: `1px solid ${analyzeHovered ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.1)"}`,
+              color: analyzeHovered ? "#fff" : "rgba(255,255,255,0.75)",
+              fontSize: 11, fontWeight: 600, letterSpacing: 0.5,
+              cursor: "pointer", transition: "all 0.15s",
+            }}
+          >
+            Analyze
+          </button>
         </div>
       </div>
     </div>
