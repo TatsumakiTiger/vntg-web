@@ -70,6 +70,8 @@ export default function Dashboard() {
   const [streakHistoryOpen, setStreakHistoryOpen] = useState(false);
   const [xpOpen, setXpOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [xpToast, setXpToast] = useState(null);
+  const xpToastTimerRef = useRef(null);
   const [leaderboard, setLeaderboard] = useState(null);
   const [analyzerVideo, setAnalyzerVideo] = useState(() => {
     try { const s = localStorage.getItem("vntg_analyzer_video"); return s ? JSON.parse(s) : null; } catch { return null; }
@@ -121,11 +123,22 @@ export default function Dashboard() {
         setUser(data);
         setSubscribedAgent(data.subscribed_agent || null);
         setLoading(false);
+        // Show XP toast if user gained XP since last visit
+        const newXp = data.xp || 0;
+        const lastXp = parseInt(localStorage.getItem("vntg_last_xp") || "0", 10);
+        if (newXp > lastXp) showXpToast(newXp - lastXp);
+        localStorage.setItem("vntg_last_xp", String(newXp));
       })
       .catch(() => {
         clearToken();
         navigate("/");
       });
+  }, []);
+
+  /* ── TEMP: XP toast preview — remove before final commit ── */
+  useEffect(() => {
+    const id = setInterval(() => showXpToast(20), 4000);
+    return () => clearInterval(id);
   }, []);
 
   /* ── Base filter options (fast, populates dropdowns instantly) ── */
@@ -291,6 +304,12 @@ export default function Dashboard() {
     navigate("/");
   }
 
+  function showXpToast(amount) {
+    if (xpToastTimerRef.current) clearTimeout(xpToastTimerRef.current);
+    setXpToast({ amount, id: Date.now() });
+    xpToastTimerRef.current = setTimeout(() => setXpToast(null), 3500);
+  }
+
   function clearFilters() {
     setFilterAgent("");
     setFilterMap("");
@@ -364,6 +383,7 @@ export default function Dashboard() {
         @keyframes flicker { 0%, 100% { transform: translateX(-50%) scaleY(1) rotate(-1deg); } 25% { transform: translateX(-50%) scaleY(1.06) rotate(1.5deg); } 50% { transform: translateX(-50%) scaleY(0.94) rotate(-1.5deg); } 75% { transform: translateX(-50%) scaleY(1.03) rotate(1deg); } }
         @keyframes innerFlicker { 0%, 100% { transform: translateX(-50%) scaleY(1); opacity: 0.9; } 50% { transform: translateX(-50%) scaleY(0.82) rotate(2deg); opacity: 0.7; } }
         @keyframes flameGlow { 0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(1); } 50% { opacity: 0.85; transform: translateX(-50%) scale(1.15); } }
+        @keyframes xpPop { 0% { opacity:0; transform:translateX(-50%) translateY(4px) scale(0.7); } 18% { opacity:1; transform:translateX(-50%) translateY(-3px) scale(1.08); } 28% { transform:translateX(-50%) translateY(0) scale(1); } 72% { opacity:1; transform:translateX(-50%) translateY(0) scale(1); } 100% { opacity:0; transform:translateX(-50%) translateY(-10px) scale(0.9); } }
       `}</style>
 
       <div style={styles.root}>
@@ -374,7 +394,36 @@ export default function Dashboard() {
             <span style={styles.logoBeta}>BETA</span>
           </div>
           <div style={styles.headerRight}>
-            <img src={avatarUrl} alt="" style={styles.headerAvatar} />
+            <div style={{ position: "relative", display: "inline-flex" }}>
+              <img src={avatarUrl} alt="" style={styles.headerAvatar} />
+              {xpToast && (
+                <div
+                  key={xpToast.id}
+                  style={{
+                    position: "absolute",
+                    top: -22,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    background: "rgba(10,10,15,0.92)",
+                    border: "1px solid rgba(201,168,76,0.55)",
+                    borderRadius: 20,
+                    padding: "3px 9px",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "#C9A84C",
+                    backdropFilter: "blur(12px)",
+                    whiteSpace: "nowrap",
+                    animation: "xpPop 3.5s ease-out forwards",
+                    pointerEvents: "none",
+                    letterSpacing: 0.4,
+                    boxShadow: "0 2px 14px rgba(201,168,76,0.25)",
+                    zIndex: 200,
+                  }}
+                >
+                  +{xpToast.amount} XP
+                </div>
+              )}
+            </div>
             <span style={styles.headerName}>{displayName}</span>
             <button onClick={handleLogout} style={styles.logoutBtn}>Log out</button>
           </div>
