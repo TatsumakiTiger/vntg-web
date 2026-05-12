@@ -677,7 +677,7 @@ export default function Dashboard() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                             <span style={{ fontSize: 13, fontWeight: 600, color: isMe ? "#C9A84C" : "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                              {entry.nick}{isMe ? " (ty)" : ""}
+                              {entry.nick}{isMe ? " (you)" : ""}
                             </span>
                             <span style={{ fontSize: 12, color, fontWeight: 600, flexShrink: 0, marginLeft: 8 }}>
                               Lv.{level} · {entry.xp} XP
@@ -1743,7 +1743,7 @@ const styles = {
   loadingPulse: { width: 40, height: 40, borderRadius: "50%", border: "3px solid rgba(201,168,76,0.2)", borderTopColor: "#C9A84C", animation: "spin 0.8s linear infinite" },
   loadingText: { fontFamily: "'Outfit', sans-serif", fontSize: 14, color: "rgba(255,255,255,0.3)" },
 
-  contactWrap: { position: "fixed", bottom: 24, left: 16, zIndex: 50, display: "flex", flexDirection: "column", alignItems: "center", gap: 16 },
+  contactWrap: { position: "fixed", bottom: 24, left: 16, zIndex: 50, display: "flex", flexDirection: "column", alignItems: "center", gap: 16, width: 40 },
   contactBtn: { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "50%", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 18, transition: "background 0.2s" },
   contactLabel: { fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 500, letterSpacing: 0.3, whiteSpace: "nowrap", opacity: 0, transform: "translateY(4px)", transition: "opacity 0.2s, transform 0.2s", pointerEvents: "none" },
 
