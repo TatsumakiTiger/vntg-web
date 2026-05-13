@@ -866,14 +866,17 @@ function GameAnalyzerView({ video, onClear }) {
   const [fixedStart, setFixedStart] = useState(null);
   const boxRef = useRef(null);
 
-  // Compute target corner position once on mount (below sticky header + tabbar)
+  // Compute target corner position — align left edge with the ProView tab text
   const [cornerPos] = useState(() => {
+    const firstTab = document.querySelector("nav button");
     const mainEl = document.querySelector("main");
-    if (mainEl) {
-      const r = mainEl.getBoundingClientRect();
-      return { top: r.top + 8, left: r.left + 8 };
+    if (firstTab && mainEl) {
+      const tabR = firstTab.getBoundingClientRect();
+      const mainR = mainEl.getBoundingClientRect();
+      // tab has 20px left padding, so text starts at tabR.left + 20
+      return { top: mainR.top + 8, left: tabR.left + 20 };
     }
-    return { top: 112, left: 8 };
+    return { top: 112, left: 52 };
   });
 
   // Persist working phase
@@ -970,6 +973,7 @@ function GameAnalyzerView({ video, onClear }) {
         padding: "7px",
         transition: phase === "moving" ? "top 0.9s cubic-bezier(0.4,0,0.2,1), left 0.9s cubic-bezier(0.4,0,0.2,1)" : "none",
         boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+        fontFamily: "'Outfit', sans-serif",
       }}>
         {/* Discreet ▶ */}
         <a
@@ -1029,6 +1033,13 @@ function GameAnalyzerView({ video, onClear }) {
     ? <span style={{ animation: "blink 0.45s step-end infinite", opacity: 0.5 }}>█</span>
     : null;
 
+  const tGone = cut(T) === "";
+  const pGone = cut(P) === "";
+  const sGone = cut(S) === "";
+  const hGone = cut(H) === "";
+  const bGone = cut(B) === "";
+  const COLLAPSE = "max-height 0.28s ease, opacity 0.22s ease, margin-bottom 0.28s ease, padding-top 0.28s ease, padding-bottom 0.28s ease";
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div ref={boxRef} style={{
@@ -1039,11 +1050,25 @@ function GameAnalyzerView({ video, onClear }) {
       }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
 
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", letterSpacing: 3, textTransform: "uppercase", marginBottom: 20, minHeight: "1.3em" }}>
+          <div style={{
+            fontSize: 11, color: "rgba(255,255,255,0.25)", letterSpacing: 3, textTransform: "uppercase",
+            overflow: "hidden",
+            maxHeight: tGone ? "0px" : "2em",
+            opacity: tGone ? 0 : 1,
+            marginBottom: tGone ? 0 : 20,
+            transition: COLLAPSE,
+          }}>
             {cut(T)}{cut(T) ? cur : null}
           </div>
 
-          <div style={{ fontSize: 56, fontWeight: 800, color: "#fff", letterSpacing: 1, lineHeight: 1, marginBottom: 10, minHeight: "1.1em" }}>
+          <div style={{
+            fontSize: 56, fontWeight: 800, color: "#fff", letterSpacing: 1, lineHeight: 1,
+            overflow: "hidden",
+            maxHeight: pGone ? "0px" : "4em",
+            opacity: pGone ? 0 : 1,
+            marginBottom: pGone ? 0 : 10,
+            transition: COLLAPSE,
+          }}>
             {cut(P)}{cut(P) ? cur : null}
           </div>
 
@@ -1054,34 +1079,60 @@ function GameAnalyzerView({ video, onClear }) {
               <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map}</span>
             </div>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", marginBottom: 48, minHeight: "1.8em" }}>
+            <div style={{
+              display: "flex", alignItems: "center",
+              overflow: "hidden",
+              maxHeight: sGone ? "0px" : "3em",
+              opacity: sGone ? 0 : 1,
+              marginBottom: sGone ? 0 : 48,
+              transition: COLLAPSE,
+            }}>
               <span style={{ fontSize: 15, color: agentColor, fontWeight: 600 }}>
                 {cut(S)}{cut(S) ? cur : null}
               </span>
             </div>
           )}
 
-          <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.88)", marginBottom: 24, minHeight: "1.3em", letterSpacing: 0.3 }}>
-            {cut(H)}{cut(H) ? cur : null}
-          </p>
+          <div style={{
+            overflow: "hidden",
+            maxHeight: hGone ? "0px" : "3em",
+            opacity: hGone ? 0 : 1,
+            marginBottom: hGone ? 0 : 24,
+            transition: COLLAPSE,
+          }}>
+            <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.88)", margin: 0, letterSpacing: 0.3 }}>
+              {cut(H)}{cut(H) ? cur : null}
+            </p>
+          </div>
 
-          <a
-            href={`https://www.youtube.com/watch?v=${video.video_id}`}
-            target="_blank" rel="noopener noreferrer"
-            onClick={() => !isErasing && setPhase("erasing")}
-            style={{
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              padding: "10px 26px", borderRadius: 8, marginBottom: 20,
-              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-              color: "rgba(255,255,255,0.65)", fontSize: 13, fontWeight: 600,
-              textDecoration: "none", letterSpacing: 0.5, transition: "all 0.15s",
-              minWidth: "16em", pointerEvents: isErasing ? "none" : "auto",
-            }}
-            onMouseEnter={e => { if (!isErasing) { e.currentTarget.style.background = "rgba(255,255,255,0.09)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#fff"; }}}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(255,255,255,0.65)"; }}
-          >
-            {cut(B)}{cut(B) ? cur : null}
-          </a>
+          <div style={{
+            overflow: "hidden",
+            maxHeight: bGone ? "0px" : "4em",
+            opacity: bGone ? 0 : 1,
+            marginBottom: bGone ? 0 : 20,
+            transition: COLLAPSE,
+          }}>
+            <button
+              onClick={() => {
+                if (isErasing) return;
+                window.open(`https://www.youtube.com/watch?v=${video.video_id}`, "_blank", "noopener,noreferrer");
+                setPhase("erasing");
+              }}
+              style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                padding: "10px 26px", borderRadius: 8,
+                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                color: "rgba(255,255,255,0.65)", fontSize: 13, fontWeight: 600,
+                fontFamily: "'Outfit', sans-serif",
+                letterSpacing: 0.5, transition: "background 0.15s, border-color 0.15s, color 0.15s", cursor: "pointer",
+                minWidth: "16em", pointerEvents: isErasing ? "none" : "auto",
+              }}
+              onMouseEnter={e => { if (!isErasing) { e.currentTarget.style.background = "rgba(255,255,255,0.09)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#fff"; }}}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(255,255,255,0.65)"; }}
+            >
+              {cut(B)}{cut(B) ? cur : null}
+            </button>
+          </div>
         </div>
       </div>
     </div>
