@@ -889,6 +889,7 @@ function GameAnalyzerView({ video, onClear }) {
   const [charsGone, setCharsGone] = useState(0);
   const [typedCount, setTypedCount] = useState(savedPhase === "working" ? FULL_LEN : 0);
   const [fixedStart, setFixedStart] = useState(null);
+  const [hudPlayHover, setHudPlayHover] = useState(false);
   const boxRef = useRef(null);
 
   // Compute target corner position — align left edge with the ProView tab text
@@ -1000,19 +1001,43 @@ function GameAnalyzerView({ video, onClear }) {
         boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
         fontFamily: "'Outfit', sans-serif",
       }}>
-        {/* Discreet ▶ */}
-        <a
-          href={`https://www.youtube.com/watch?v=${video.video_id}`}
-          target="_blank" rel="noopener noreferrer"
-          style={{
-            width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center",
-            borderRadius: 7, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.55)", fontSize: 10, textDecoration: "none", flexShrink: 0,
-            transition: "background 0.15s",
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.13)"}
-          onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
-        >▶</a>
+        {/* Discreet ▶ with tooltip */}
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <a
+            href={`https://www.youtube.com/watch?v=${video.video_id}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{
+              width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center",
+              borderRadius: 7, background: hudPlayHover ? "rgba(255,255,255,0.13)" : "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: hudPlayHover ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.55)",
+              fontSize: 10, textDecoration: "none",
+              transition: "background 0.15s, color 0.15s",
+            }}
+            onMouseEnter={() => setHudPlayHover(true)}
+            onMouseLeave={() => setHudPlayHover(false)}
+          >▶</a>
+          {hudPlayHover && (
+            <div style={{
+              position: "absolute",
+              bottom: "calc(100% + 7px)",
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "rgba(8,8,12,0.95)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 6,
+              padding: "4px 9px",
+              fontSize: 11,
+              fontFamily: "'Outfit', sans-serif",
+              color: "rgba(255,255,255,0.75)",
+              whiteSpace: "nowrap",
+              pointerEvents: "none",
+              animation: "fadeUp 0.12s ease-out both",
+            }}>
+              Open on YouTube
+            </div>
+          )}
+        </div>
 
         {/* Typed colored info */}
         {showText && typedCount > 0 && (
@@ -1063,6 +1088,10 @@ function GameAnalyzerView({ video, onClear }) {
   const sGone = cut(S) === "";
   const hGone = cut(H) === "";
   const COLLAPSE = "max-height 0.28s ease, opacity 0.22s ease, margin-bottom 0.28s ease, padding-top 0.28s ease, padding-bottom 0.28s ease";
+  // Staggered entrance — only on first render, not during/after erase
+  const stagger = (delay) => phase === "hero"
+    ? { animation: "fadeUp 0.4s ease-out both", animationDelay: `${delay}ms` }
+    : {};
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -1081,6 +1110,7 @@ function GameAnalyzerView({ video, onClear }) {
             opacity: tGone ? 0 : 1,
             marginBottom: tGone ? 0 : 20,
             transition: COLLAPSE,
+            ...stagger(0),
           }}>
             {cut(T)}{cut(T) ? cur : null}
           </div>
@@ -1092,12 +1122,13 @@ function GameAnalyzerView({ video, onClear }) {
             opacity: pGone ? 0 : 1,
             marginBottom: pGone ? 0 : 10,
             transition: COLLAPSE,
+            ...stagger(90),
           }}>
             {cut(P)}{cut(P) ? cur : null}
           </div>
 
           {!isErasing ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48, ...stagger(180) }}>
               <span style={{ fontSize: 15, color: agentColor, fontWeight: 600, letterSpacing: 0.5 }}>{video.agent}</span>
               <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>·</span>
               <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map}</span>
@@ -1123,6 +1154,7 @@ function GameAnalyzerView({ video, onClear }) {
             opacity: hGone ? 0 : 1,
             marginBottom: hGone ? 0 : 24,
             transition: COLLAPSE,
+            ...stagger(280),
           }}>
             <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.88)", margin: 0, letterSpacing: 0.3 }}>
               {cut(H)}{cut(H) ? cur : null}
@@ -1137,6 +1169,7 @@ function GameAnalyzerView({ video, onClear }) {
             opacity: isErasing ? 0 : 1,
             marginBottom: isErasing ? 0 : 8,
             transition: COLLAPSE,
+            ...stagger(390),
           }}>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
               {FOCUS_OPTIONS.map(opt => (
