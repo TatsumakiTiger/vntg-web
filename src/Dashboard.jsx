@@ -844,6 +844,31 @@ export default function Dashboard() {
   );
 }
 
+/* ── Focus option chip ── */
+function FocusChip({ label, onClick, disabled }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        padding: "10px 22px",
+        borderRadius: 10,
+        background: hovered ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.04)",
+        border: `1px solid ${hovered ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.1)"}`,
+        color: hovered ? "#fff" : "rgba(255,255,255,0.6)",
+        fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+        letterSpacing: 0.4, cursor: disabled ? "default" : "pointer",
+        transition: "background 0.15s, border-color 0.15s, color 0.15s",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 /* ── Game Analyzer View ── */
 function GameAnalyzerView({ video, onClear }) {
   const agentColor = AGENT_COLORS[video.agent] || "#888";
@@ -874,7 +899,7 @@ function GameAnalyzerView({ video, onClear }) {
       const tabR = firstTab.getBoundingClientRect();
       const mainR = mainEl.getBoundingClientRect();
       // tab has 20px left padding, so text starts at tabR.left + 20
-      return { top: mainR.top + 8, left: tabR.left + 20 };
+      return { top: mainR.top + 28, left: tabR.left + 20 };
     }
     return { top: 112, left: 52 };
   });
@@ -889,9 +914,9 @@ function GameAnalyzerView({ video, onClear }) {
   const T = "Now analyzing";
   const P = video.player;
   const S = `${video.agent} · ${video.map}`;
-  const H = "First, open your VOD";
-  const B = "Got it, let's go →";
-  const MAX = Math.max(T.length, P.length, S.length, H.length, B.length);
+  const H = "What do you want to focus on?";
+  const FOCUS_OPTIONS = ["Positioning"];
+  const MAX = Math.max(T.length, P.length, S.length, H.length);
   const cut = (str) => str.slice(0, Math.max(0, str.length - charsGone));
   const isErasing = phase === "erasing";
 
@@ -1037,7 +1062,6 @@ function GameAnalyzerView({ video, onClear }) {
   const pGone = cut(P) === "";
   const sGone = cut(S) === "";
   const hGone = cut(H) === "";
-  const bGone = cut(B) === "";
   const COLLAPSE = "max-height 0.28s ease, opacity 0.22s ease, margin-bottom 0.28s ease, padding-top 0.28s ease, padding-bottom 0.28s ease";
 
   return (
@@ -1105,32 +1129,25 @@ function GameAnalyzerView({ video, onClear }) {
             </p>
           </div>
 
+          {/* Focus options */}
           <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 14,
             overflow: "hidden",
-            maxHeight: bGone ? "0px" : "4em",
-            opacity: bGone ? 0 : 1,
-            marginBottom: bGone ? 0 : 20,
+            maxHeight: isErasing ? "0px" : "160px",
+            opacity: isErasing ? 0 : 1,
+            marginBottom: isErasing ? 0 : 8,
             transition: COLLAPSE,
           }}>
-            <button
-              onClick={() => {
-                if (isErasing) return;
-                setPhase("erasing");
-              }}
-              style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                padding: "10px 26px", borderRadius: 8,
-                background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                color: "rgba(255,255,255,0.65)", fontSize: 13, fontWeight: 600,
-                fontFamily: "'Outfit', sans-serif",
-                letterSpacing: 0.5, transition: "background 0.15s, border-color 0.15s, color 0.15s", cursor: "pointer",
-                minWidth: "16em", pointerEvents: isErasing ? "none" : "auto",
-              }}
-              onMouseEnter={e => { if (!isErasing) { e.currentTarget.style.background = "rgba(255,255,255,0.09)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; e.currentTarget.style.color = "#fff"; }}}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(255,255,255,0.65)"; }}
-            >
-              {cut(B)}{cut(B) ? cur : null}
-            </button>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+              {FOCUS_OPTIONS.map(opt => (
+                <FocusChip
+                  key={opt}
+                  label={opt}
+                  disabled={isErasing}
+                  onClick={() => { if (!isErasing) setPhase("erasing"); }}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
