@@ -890,7 +890,7 @@ function GameAnalyzerView({ video, onClear }) {
   const P = video.player;
   const S = `${video.agent} · ${video.map}`;
   const H = "First, open your VOD";
-  const B = "▶ Open on YouTube";
+  const B = "Got it, let's go →";
   const MAX = Math.max(T.length, P.length, S.length, H.length, B.length);
   const cut = (str) => str.slice(0, Math.max(0, str.length - charsGone));
   const isErasing = phase === "erasing";
@@ -1113,17 +1113,8 @@ function GameAnalyzerView({ video, onClear }) {
             transition: COLLAPSE,
           }}>
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
+              onClick={() => {
                 if (isErasing) return;
-                const a = document.createElement("a");
-                a.href = `https://www.youtube.com/watch?v=${video.video_id}`;
-                a.target = "_blank";
-                a.rel = "noopener noreferrer";
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
                 setPhase("erasing");
               }}
               style={{
