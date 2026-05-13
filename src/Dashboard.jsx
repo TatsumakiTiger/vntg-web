@@ -892,17 +892,16 @@ function GameAnalyzerView({ video, onClear }) {
   const [hudPlayHover, setHudPlayHover] = useState(false);
   const boxRef = useRef(null);
 
-  // Compute target corner position — align left edge with the ProView tab text
+  // Compute target corner position — scroll-independent: use offsetHeight, not getBoundingClientRect
   const [cornerPos] = useState(() => {
+    const headerEl = document.querySelector("header");
+    const navEl = document.querySelector("nav");
     const firstTab = document.querySelector("nav button");
-    const mainEl = document.querySelector("main");
-    if (firstTab && mainEl) {
-      const tabR = firstTab.getBoundingClientRect();
-      const mainR = mainEl.getBoundingClientRect();
-      // tab has 20px left padding, so text starts at tabR.left + 20
-      return { top: mainR.top + 28, left: tabR.left + 20 };
+    if (headerEl && navEl && firstTab) {
+      const tabR = firstTab.getBoundingClientRect(); // left is unaffected by vertical scroll
+      return { top: headerEl.offsetHeight + navEl.offsetHeight + 20, left: tabR.left + 20 };
     }
-    return { top: 112, left: 52 };
+    return { top: 136, left: 52 };
   });
 
   // Persist working phase
@@ -913,11 +912,10 @@ function GameAnalyzerView({ video, onClear }) {
   }, [phase]);
 
   const T = "Now analyzing";
-  const P = video.player;
   const S = `${video.agent} · ${video.map}`;
   const H = "What do you want to focus on?";
   const FOCUS_OPTIONS = ["Positioning"];
-  const MAX = Math.max(T.length, P.length, S.length, H.length);
+  const MAX = Math.max(T.length, S.length, H.length);
   const cut = (str) => str.slice(0, Math.max(0, str.length - charsGone));
   const isErasing = phase === "erasing";
 
@@ -1084,7 +1082,6 @@ function GameAnalyzerView({ video, onClear }) {
     : null;
 
   const tGone = cut(T) === "";
-  const pGone = cut(P) === "";
   const sGone = cut(S) === "";
   const hGone = cut(H) === "";
   const COLLAPSE = "max-height 0.28s ease, opacity 0.22s ease, margin-bottom 0.28s ease, padding-top 0.28s ease, padding-bottom 0.28s ease";
@@ -1115,20 +1112,8 @@ function GameAnalyzerView({ video, onClear }) {
             {cut(T)}{cut(T) ? cur : null}
           </div>
 
-          <div style={{
-            fontSize: 56, fontWeight: 800, color: "#fff", letterSpacing: 1, lineHeight: 1,
-            overflow: "hidden",
-            maxHeight: pGone ? "0px" : "4em",
-            opacity: pGone ? 0 : 1,
-            marginBottom: pGone ? 0 : 10,
-            transition: COLLAPSE,
-            ...stagger(90),
-          }}>
-            {cut(P)}{cut(P) ? cur : null}
-          </div>
-
           {!isErasing ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48, ...stagger(180) }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48, ...stagger(90) }}>
               <span style={{ fontSize: 15, color: agentColor, fontWeight: 600, letterSpacing: 0.5 }}>{video.agent}</span>
               <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>·</span>
               <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map}</span>
