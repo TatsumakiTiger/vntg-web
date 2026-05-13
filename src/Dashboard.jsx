@@ -1113,9 +1113,17 @@ function GameAnalyzerView({ video, onClear }) {
             transition: COLLAPSE,
           }}>
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 if (isErasing) return;
-                window.open(`https://www.youtube.com/watch?v=${video.video_id}`, "_blank", "noopener,noreferrer");
+                const a = document.createElement("a");
+                a.href = `https://www.youtube.com/watch?v=${video.video_id}`;
+                a.target = "_blank";
+                a.rel = "noopener noreferrer";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
                 setPhase("erasing");
               }}
               style={{
