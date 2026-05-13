@@ -899,7 +899,7 @@ function GameAnalyzerView({ video, onClear }) {
     const firstTab = document.querySelector("nav button");
     if (headerEl && navEl && firstTab) {
       const tabR = firstTab.getBoundingClientRect(); // left is unaffected by vertical scroll
-      return { top: headerEl.offsetHeight + navEl.offsetHeight + 20, left: tabR.left + 20 };
+      return { top: headerEl.offsetHeight + navEl.offsetHeight + 44, left: tabR.left + 20 };
     }
     return { top: 136, left: 52 };
   });
@@ -1018,7 +1018,7 @@ function GameAnalyzerView({ video, onClear }) {
           {hudPlayHover && (
             <div style={{
               position: "absolute",
-              bottom: "calc(100% + 7px)",
+              top: "calc(100% + 7px)",
               left: "50%",
               transform: "translateX(-50%)",
               background: "rgba(8,8,12,0.95)",
