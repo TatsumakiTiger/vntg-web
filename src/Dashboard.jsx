@@ -916,10 +916,10 @@ function GameAnalyzerView({ video, onClear }) {
   const H = "What do you want to focus on?";
   const FOCUS_OPTIONS = ["Positioning"];
   const MAX = Math.max(T.length, S.length, H.length);
-  const cut = (str) => str.slice(0, Math.max(0, str.length - charsGone));
+  const cut = (str) => str.slice(0, Math.ceil(str.length * Math.max(0, 1 - charsGone / MAX)));
   const isErasing = phase === "erasing";
 
-  /* erase — much slower, one char per 90ms */
+  /* erase — 42ms per step */
   useEffect(() => {
     if (phase !== "erasing") return;
     let n = 0;
@@ -934,7 +934,7 @@ function GameAnalyzerView({ video, onClear }) {
         }
         setPhase("shrunk");
       }
-    }, 90);
+    }, 42);
     return () => clearInterval(id);
   }, [phase]);
 
