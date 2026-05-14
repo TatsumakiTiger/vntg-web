@@ -781,14 +781,13 @@ export default function Dashboard() {
               <p style={styles.modalSub}>
                 Select your main. Whenever a new VOD with that agent drops, you'll get a Discord DM with a link.
               </p>
-              <div style={{ width: "100%" }}>
-                <Select
-                  value={selectedAgent || subscribedAgent || ""}
-                  onChange={v => setSelectedAgent(v)}
-                  placeholder="Select your main"
-                  options={Object.keys(AGENT_COLORS).sort()}
-                />
-              </div>
+              <Select
+                value={selectedAgent || subscribedAgent || ""}
+                onChange={v => setSelectedAgent(v)}
+                placeholder="Select your main"
+                options={Object.keys(AGENT_COLORS).sort()}
+                style={{ width: "100%" }}
+              />
               {subscribedAgent && (
                 <p style={styles.subCurrent}>
                   Currently subscribed to: <span style={{ color: AGENT_COLORS[subscribedAgent] || "#C9A84C" }}>{subscribedAgent}</span>
@@ -912,10 +911,10 @@ function GameAnalyzerView({ video, onClear }) {
     }
   }, [phase]);
 
-  const T = "Now analyzing";
+  const T = "Ready to analyze";
   const S = `${video.agent} · ${video.map}`;
-  const H = "What do you want to focus on?";
-  const FOCUS_OPTIONS = ["Positioning"];
+  const H = "Open the VOD";
+  const FOCUS_OPTIONS = ["Start Tracking"];
   const MAX = Math.max(T.length, S.length, H.length);
   const cut = (str) => str.slice(0, Math.ceil(str.length * Math.max(0, 1 - charsGone / MAX)));
   const isErasing = phase === "erasing";
@@ -1101,7 +1100,7 @@ function GameAnalyzerView({ video, onClear }) {
         background: "rgba(255,255,255,0.03)",
         border: `1px solid ${agentColor}22`,
         borderRadius: 14,
-        padding: "72px 40px",
+        padding: "64px 40px 52px",
       }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
 
@@ -1110,7 +1109,7 @@ function GameAnalyzerView({ video, onClear }) {
             overflow: "hidden",
             maxHeight: tGone ? "0px" : "2em",
             opacity: tGone ? 0 : 1,
-            marginBottom: tGone ? 0 : 20,
+            marginBottom: tGone ? 0 : 16,
             transition: COLLAPSE,
             ...stagger(0),
           }}>
@@ -1118,10 +1117,10 @@ function GameAnalyzerView({ video, onClear }) {
           </div>
 
           {!isErasing ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48, ...stagger(90) }}>
-              <span style={{ fontSize: 15, color: agentColor, fontWeight: 600, letterSpacing: 0.5 }}>{video.agent}</span>
-              <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>·</span>
-              <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28, ...stagger(90) }}>
+              <span style={{ fontSize: 13, color: agentColor, fontWeight: 600, letterSpacing: 0.5 }}>{video.agent}</span>
+              <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 11 }}>·</span>
+              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>{video.map}</span>
             </div>
           ) : (
             <div style={{
@@ -1129,7 +1128,7 @@ function GameAnalyzerView({ video, onClear }) {
               overflow: "hidden",
               maxHeight: sGone ? "0px" : "3em",
               opacity: sGone ? 0 : 1,
-              marginBottom: sGone ? 0 : 48,
+              marginBottom: sGone ? 0 : 28,
               transition: COLLAPSE,
             }}>
               {(() => {
@@ -1141,9 +1140,9 @@ function GameAnalyzerView({ video, onClear }) {
                 const onMap = mShow > 0, onSep = !onMap && sepShow > 0;
                 return (
                   <>
-                    {aShow > 0 && <span style={{ fontSize: 15, color: agentColor, fontWeight: 600 }}>{video.agent.slice(0, aShow)}{!onSep && !onMap && cur}</span>}
-                    {sepShow > 0 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>{" · ".slice(0, sepShow)}{onSep && cur}</span>}
-                    {mShow > 0 && <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map.slice(0, mShow)}{onMap && cur}</span>}
+                    {aShow > 0 && <span style={{ fontSize: 13, color: agentColor, fontWeight: 600 }}>{video.agent.slice(0, aShow)}{!onSep && !onMap && cur}</span>}
+                    {sepShow > 0 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 11 }}>{" · ".slice(0, sepShow)}{onSep && cur}</span>}
+                    {mShow > 0 && <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>{video.map.slice(0, mShow)}{onMap && cur}</span>}
                   </>
                 );
               })()}
@@ -1152,27 +1151,29 @@ function GameAnalyzerView({ video, onClear }) {
 
           <div style={{
             overflow: "hidden",
-            maxHeight: hGone ? "0px" : "3em",
+            maxHeight: hGone ? "0px" : "6em",
             opacity: hGone ? 0 : 1,
-            marginBottom: hGone ? 0 : 24,
+            marginBottom: hGone ? 0 : 10,
             transition: COLLAPSE,
-            ...stagger(280),
+            ...stagger(200),
           }}>
-            <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.88)", margin: 0, letterSpacing: 0.3 }}>
+            <p style={{ fontSize: 42, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: -1, lineHeight: 1.05 }}>
               {cut(H)}{cut(H) ? cur : null}
             </p>
           </div>
 
-          {/* Focus options */}
+          {/* Subtitle + CTA + disclaimer */}
           <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 14,
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 20,
             overflow: "hidden",
-            maxHeight: isErasing ? "0px" : "160px",
+            maxHeight: isErasing ? "0px" : "400px",
             opacity: isErasing ? 0 : 1,
-            marginBottom: isErasing ? 0 : 8,
             transition: COLLAPSE,
-            ...stagger(390),
+            ...stagger(320),
           }}>
+            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.32)", margin: 0, fontWeight: 400 }}>
+              and go to the start of the match
+            </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
               {FOCUS_OPTIONS.map(opt => (
                 <FocusChip
@@ -1183,7 +1184,11 @@ function GameAnalyzerView({ video, onClear }) {
                 />
               ))}
             </div>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.18)", maxWidth: 360, lineHeight: 1.65, margin: 0, textAlign: "center" }}>
+              ⚠ Some VODs don't start from round 1 or may be trimmed if nothing happened early on.
+            </p>
           </div>
+
         </div>
       </div>
     </div>
@@ -1261,30 +1266,27 @@ function RoundSetupPanel({ agentColor, startingSide, setStartingSide, startScore
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, animation: "fadeUp 0.45s ease-out both" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, animation: "fadeUp 0.45s ease-out both" }}>
 
       {/* Setup card */}
       <div style={{
-        padding: "20px 24px", borderRadius: 12,
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.07)",
+        padding: "14px 20px", borderRadius: 12,
+        background: "rgba(255,255,255,0.03)",
+        border: `1px solid ${agentColor}22`,
       }}>
-        <p style={{ fontSize: 10, letterSpacing: 3, color: "rgba(255,255,255,0.2)", textTransform: "uppercase", margin: "0 0 18px" }}>
-          Match Setup
-        </p>
-        <div style={{ display: "flex", gap: 32, flexWrap: "wrap", alignItems: "flex-start" }}>
+        <div style={{ display: "flex", gap: 28, flexWrap: "wrap", alignItems: "center" }}>
           <div>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", margin: "0 0 8px" }}>Player starts as</p>
+            <p style={{ fontSize: 10, letterSpacing: 1.5, color: "rgba(255,255,255,0.2)", textTransform: "uppercase", margin: "0 0 6px" }}>Player starts on</p>
             <div style={{ display: "flex", gap: 6 }}>
               {sideBtn("attack", "Attack", ATK)}
               {sideBtn("defend", "Defend", DEF)}
             </div>
           </div>
           <div>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", margin: "0 0 8px" }}>Starting score</p>
+            <p style={{ fontSize: 10, letterSpacing: 1.5, color: "rgba(255,255,255,0.2)", textTransform: "uppercase", margin: "0 0 6px" }}>Starting score</p>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <ScoreSpinner value={startScore.me} onChange={v => setStartScore(s => ({ ...s, me: v }))} />
-              <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 18, fontWeight: 300 }}>:</span>
+              <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 16, fontWeight: 300 }}>:</span>
               <ScoreSpinner value={startScore.them} onChange={v => setStartScore(s => ({ ...s, them: v }))} />
             </div>
           </div>
@@ -1294,16 +1296,16 @@ function RoundSetupPanel({ agentColor, startingSide, setStartingSide, startScore
       {/* Rounds card */}
       {startingSide && (
         <div style={{
-          padding: "20px 24px", borderRadius: 12,
-          background: "rgba(255,255,255,0.02)",
-          border: "1px solid rgba(255,255,255,0.07)",
+          padding: "14px 20px", borderRadius: 12,
+          background: "rgba(255,255,255,0.03)",
+          border: `1px solid ${agentColor}22`,
           animation: "fadeUp 0.35s ease-out both",
         }}>
           {/* Live score */}
-          <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 16 }}>
-            <span style={{ fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: 1 }}>{score.me}</span>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 12 }}>
+            <span style={{ fontSize: 28, fontWeight: 700, color: "#fff", letterSpacing: 1 }}>{score.me}</span>
             <span style={{ fontSize: 16, color: "rgba(255,255,255,0.2)" }}>:</span>
-            <span style={{ fontSize: 26, fontWeight: 700, color: "rgba(255,255,255,0.3)" }}>{score.them}</span>
+            <span style={{ fontSize: 28, fontWeight: 700, color: "rgba(255,255,255,0.3)" }}>{score.them}</span>
             <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 2, textTransform: "uppercase", marginLeft: 8 }}>
               Round {totalStart + rounds.length + 1}
             </span>
@@ -1311,34 +1313,36 @@ function RoundSetupPanel({ agentColor, startingSide, setStartingSide, startScore
 
           {/* Round dots */}
           {rounds.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 12 }}>
               {rounds.map((r, i) => dot(r, i, 0))}
             </div>
           )}
 
           {/* Add round */}
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 1.5, textTransform: "uppercase", marginRight: 2 }}>
+            <span style={{ fontSize: 10, color: nextColor, letterSpacing: 1.5, textTransform: "uppercase", opacity: 0.7 }}>
               {nextSide}
             </span>
             <button
               onClick={() => setRounds(r => [...r, { win: true }])}
               style={{
-                padding: "5px 18px", borderRadius: 7, cursor: "pointer",
+                flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "6px 0", borderRadius: 7, cursor: "pointer",
                 border: `1px solid ${nextColor}44`,
                 background: nextColor + "14",
                 color: nextColor, fontSize: 12, fontWeight: 600,
-                fontFamily: "'Outfit', sans-serif",
+                fontFamily: "'Outfit', sans-serif", transition: "all 0.15s",
               }}
             >Win</button>
             <button
               onClick={() => setRounds(r => [...r, { win: false }])}
               style={{
-                padding: "5px 18px", borderRadius: 7, cursor: "pointer",
+                flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "6px 0", borderRadius: 7, cursor: "pointer",
                 border: "1px solid rgba(255,255,255,0.1)",
-                background: "rgba(255,255,255,0.04)",
-                color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 400,
-                fontFamily: "'Outfit', sans-serif",
+                background: "rgba(255,255,255,0.06)",
+                color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 500,
+                fontFamily: "'Outfit', sans-serif", transition: "all 0.15s",
               }}
             >Loss</button>
             {rounds.length > 0 && (
@@ -2187,7 +2191,7 @@ function InfoTooltip({ text }) {
 }
 
 /* ── Select component ── */
-function Select({ value, onChange, placeholder, options, locked = false }) {
+function Select({ value, onChange, placeholder, options, locked = false, style }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
@@ -2228,7 +2232,7 @@ function Select({ value, onChange, placeholder, options, locked = false }) {
   }
 
   return (
-    <div ref={wrapRef} style={styles.selectWrap}>
+    <div ref={wrapRef} style={{ ...styles.selectWrap, ...style }}>
       <input
         ref={inputRef}
         type="text"
@@ -2241,6 +2245,7 @@ function Select({ value, onChange, placeholder, options, locked = false }) {
         autoComplete="off"
         style={{
           ...styles.select,
+          flex: 1,
           color: value || query ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)",
           paddingRight: value ? 32 : 14,
           cursor: locked ? "default" : "pointer",
