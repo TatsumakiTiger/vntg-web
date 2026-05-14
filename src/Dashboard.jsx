@@ -974,7 +974,7 @@ function GameAnalyzerView({ video, onClear }) {
       i++;
       setInstrCount(i);
       if (i >= INSTR.length) clearInterval(id);
-    }, 38);
+    }, 18);
     return () => clearInterval(id);
   }, [phase]);
 
@@ -1081,12 +1081,20 @@ function GameAnalyzerView({ video, onClear }) {
         {hud}
         {phase === "working" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14, animation: "fadeUp 0.4s ease-out both" }}>
-            <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.45)", fontFamily: "'Outfit', sans-serif", letterSpacing: 0.2 }}>
-              {INSTR.slice(0, instrCount)}
-              {instrCount < INSTR.length && (
-                <span style={{ color: "rgba(255,255,255,0.3)", animation: "blink 0.6s step-end infinite" }}>|</span>
-              )}
-            </p>
+            <div style={{
+              overflow: "hidden",
+              maxHeight: startingSide ? "0px" : "3em",
+              opacity: startingSide ? 0 : 1,
+              marginBottom: startingSide ? 0 : 2,
+              transition: "max-height 0.3s ease, opacity 0.2s ease, margin-bottom 0.3s ease",
+            }}>
+              <p style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.82)", fontFamily: "'Space Grotesk', sans-serif", letterSpacing: 0.1 }}>
+                {INSTR.slice(0, instrCount)}
+                {instrCount < INSTR.length && (
+                  <span style={{ color: "rgba(255,255,255,0.3)", animation: "blink 0.6s step-end infinite" }}>|</span>
+                )}
+              </p>
+            </div>
             <RoundSetupPanel
               agentColor={agentColor}
               startingSide={startingSide}
@@ -1297,7 +1305,7 @@ function RoundSetupPanel({ agentColor, startingSide, setStartingSide, startScore
       {/* Setup card */}
       <div style={{
         padding: "14px 20px", borderRadius: 12,
-        background: "rgba(255,255,255,0.03)",
+        background: "rgba(255,255,255,0.07)",
         border: `1px solid ${agentColor}22`,
       }}>
         <div style={{ display: "flex", gap: 28, flexWrap: "wrap", alignItems: "center" }}>
