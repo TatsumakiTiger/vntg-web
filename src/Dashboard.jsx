@@ -963,7 +963,7 @@ function GameAnalyzerView({ video, onClear }) {
       i++;
       setTypedCount(i);
       if (i >= FULL_LEN) { clearInterval(id); setPhase("working"); }
-    }, 85);
+    }, 18);
     return () => clearInterval(id);
   }, [phase]);
 
@@ -1013,7 +1013,10 @@ function GameAnalyzerView({ video, onClear }) {
   const cNext = startingSide ? getCSide(rounds.length) : null;
   const cNextColor = cNext === "attack" ? ATK_C : DEF_C;
   const cTied12 = cScore.me === 12 && cScore.them === 12 && !isOvertime;
-  const cGameOver = !isOvertime && startingSide && (cScore.me >= 13 || cScore.them >= 13);
+  const cGameOver = startingSide && (
+    (!isOvertime && (cScore.me >= 13 || cScore.them >= 13)) ||
+    (isOvertime && Math.abs(cScore.me - cScore.them) >= 2)
+  );
 
   /* ── Compact fixed HUD — portaled to body to escape fadeUp transform ── */
   if (isFixed) {
@@ -1115,6 +1118,19 @@ function GameAnalyzerView({ video, onClear }) {
           zIndex: 100,
           boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
         }}>
+          {rounds.length === 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+              <span style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 1.5, textTransform: "uppercase" }}>Start</span>
+              {[["me"], ["them"]].map(([k], ki) => (
+                <span key={k} style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                  {ki > 0 && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", margin: "0 2px" }}>:</span>}
+                  <button onClick={() => setStartScore(s => ({ ...s, [k]: Math.max(0, s[k] - 1) }))} style={{ width: 16, height: 16, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", fontSize: 10, cursor: "pointer", lineHeight: 1, padding: 0, fontFamily: "'Outfit', sans-serif" }}>−</button>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", minWidth: 12, textAlign: "center" }}>{startScore[k]}</span>
+                  <button onClick={() => setStartScore(s => ({ ...s, [k]: s[k] + 1 }))} style={{ width: 16, height: 16, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", fontSize: 10, cursor: "pointer", lineHeight: 1, padding: 0, fontFamily: "'Outfit', sans-serif" }}>+</button>
+                </span>
+              ))}
+            </div>
+          )}
           <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: rounds.length > 0 ? 8 : 0 }}>
             <span style={{ fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: 0.5 }}>{cScore.me}</span>
             <span style={{ fontSize: 13, color: "rgba(255,255,255,0.2)" }}>:</span>
@@ -1159,38 +1175,31 @@ function GameAnalyzerView({ video, onClear }) {
       <>
         {hud}
         {phase === "working" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 14, animation: "fadeUp 0.4s ease-out both" }}>
+          <div style={{ animation: "fadeUp 0.4s ease-out both" }}>
             <div style={{
               overflow: "hidden",
-              maxHeight: startingSide ? "0px" : "3em",
+              maxHeight: startingSide ? "0px" : "120px",
               opacity: startingSide ? 0 : 1,
-              marginBottom: startingSide ? 0 : 2,
-              transition: "max-height 0.3s ease, opacity 0.2s ease, margin-bottom 0.3s ease",
+              transition: "max-height 0.38s ease, opacity 0.25s ease",
             }}>
-              <p style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.82)", fontFamily: "'Space Grotesk', sans-serif", letterSpacing: 0.1 }}>
+              <p style={{ margin: "0 0 18px", fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.82)", fontFamily: "'Space Grotesk', sans-serif", letterSpacing: 0.1 }}>
                 {INSTR.slice(0, instrCount)}
                 {instrCount < INSTR.length && (
                   <span style={{ color: "rgba(255,255,255,0.3)", animation: "blink 0.6s step-end infinite" }}>|</span>
                 )}
               </p>
-            </div>
-            <div style={{
-              overflow: "hidden",
-              maxHeight: startingSide ? "0px" : "2000px",
-              opacity: startingSide ? 0 : 1,
-              transition: "max-height 0.5s ease, opacity 0.3s ease",
-            }}>
-              <RoundSetupPanel
-                agentColor={agentColor}
-                startingSide={startingSide}
-                setStartingSide={setStartingSide}
-                startScore={startScore}
-                setStartScore={setStartScore}
-                rounds={rounds}
-                setRounds={setRounds}
-                isOvertime={isOvertime}
-                setIsOvertime={setIsOvertime}
-              />
+              {instrCount >= INSTR.length && (
+                <div style={{ display: "flex", gap: 8, animation: "fadeUp 0.25s ease-out both" }}>
+                  <button
+                    onClick={() => setStartingSide("attack")}
+                    style={{ padding: "7px 22px", borderRadius: 8, cursor: "pointer", border: "1px solid rgba(248,113,113,0.45)", background: "rgba(248,113,113,0.1)", color: "#F87171", fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif", transition: "all 0.15s" }}
+                  >Attack</button>
+                  <button
+                    onClick={() => setStartingSide("defend")}
+                    style={{ padding: "7px 22px", borderRadius: 8, cursor: "pointer", border: "1px solid rgba(96,165,250,0.45)", background: "rgba(96,165,250,0.1)", color: "#60A5FA", fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif", transition: "all 0.15s" }}
+                  >Defend</button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1351,7 +1360,8 @@ function RoundSetupPanel({ agentColor, startingSide, setStartingSide, startScore
   const totalStart = startScore.me + startScore.them;
   const isOvertimeReady = score.me === 13 && score.them === 13;
   const isTied12 = score.me === 12 && score.them === 12 && !isOvertime;
-  const gameOver = !isOvertime && (score.me >= 13 || score.them >= 13);
+  const gameOver = (!isOvertime && (score.me >= 13 || score.them >= 13)) ||
+    (isOvertime && Math.abs(score.me - score.them) >= 2);
 
   const nextSide = getSide(rounds.length);
   const nextColor = nextSide === "attack" ? ATK : DEF;
