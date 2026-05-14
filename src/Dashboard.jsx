@@ -1563,7 +1563,7 @@ function ProfileField({ label, value }) {
 // XP thresholds: L1=0, L2=50, L3=150, L4=300, L5=500
 const XP_THRESHOLDS = [0, 50, 150, 300, 500];
 const XP_TO_NEXT    = [50, 100, 150, 200, 200];
-const LEVEL_COLORS  = ["#94A3B8", "#4ADE80", "#3B82F6", "#A855F7", "#C9A84C"];
+const LEVEL_COLORS  = ["#94A3B8", "#94A3B8", "#94A3B8", "#94A3B8", "#94A3B8"];
 
 function getLevel(xp) {
   xp = xp || 0;
