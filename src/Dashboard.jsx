@@ -891,6 +891,9 @@ function GameAnalyzerView({ video, onClear }) {
   const [fixedStart, setFixedStart] = useState(null);
   const [hudPlayHover, setHudPlayHover] = useState(false);
   const boxRef = useRef(null);
+  const [startingSide, setStartingSide] = useState(null);
+  const [startScore, setStartScore] = useState({ me: 0, them: 0 });
+  const [rounds, setRounds] = useState([]);
 
   // Compute target corner position — scroll-independent: use offsetHeight, not getBoundingClientRect
   const [cornerPos] = useState(() => {
@@ -1065,12 +1068,16 @@ function GameAnalyzerView({ video, onClear }) {
     return (
       <>
         {hud}
-        {showText && (
-          <div style={{ animation: "fadeUp 0.4s ease-out both", display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ padding: "48px 24px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, textAlign: "center", color: "rgba(255,255,255,0.18)", fontSize: 13 }}>
-              More steps coming soon…
-            </div>
-          </div>
+        {phase === "working" && (
+          <RoundSetupPanel
+            agentColor={agentColor}
+            startingSide={startingSide}
+            setStartingSide={setStartingSide}
+            startScore={startScore}
+            setStartScore={setStartScore}
+            rounds={rounds}
+            setRounds={setRounds}
+          />
         )}
       </>
     );
@@ -1181,6 +1188,177 @@ function GameAnalyzerView({ video, onClear }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Score Spinner ── */
+function ScoreSpinner({ value, onChange }) {
+  const btn = {
+    width: 24, height: 24, borderRadius: 6,
+    border: "1px solid rgba(255,255,255,0.1)",
+    background: "rgba(255,255,255,0.05)",
+    color: "rgba(255,255,255,0.45)", fontSize: 16, lineHeight: 1,
+    cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+    display: "flex", alignItems: "center", justifyContent: "center",
+  };
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <button style={btn} onClick={() => onChange(Math.max(0, value - 1))}>−</button>
+      <span style={{ minWidth: 22, textAlign: "center", fontSize: 16, fontWeight: 700, color: "#fff" }}>{value}</span>
+      <button style={btn} onClick={() => onChange(value + 1)}>+</button>
+    </div>
+  );
+}
+
+/* ── Round Setup Panel ── */
+function RoundSetupPanel({ agentColor, startingSide, setStartingSide, startScore, setStartScore, rounds, setRounds }) {
+  const ATK = "#F87171";
+  const DEF = "#60A5FA";
+
+  function getSide(roundIdx) {
+    const total = startScore.me + startScore.them + roundIdx;
+    if (total >= 12) return startingSide === "attack" ? "defend" : "attack";
+    return startingSide;
+  }
+
+  const score = rounds.reduce(
+    (acc, r) => ({ me: acc.me + (r.win ? 1 : 0), them: acc.them + (!r.win ? 1 : 0) }),
+    startScore
+  );
+
+  const totalStart = startScore.me + startScore.them;
+
+  const nextSide = getSide(rounds.length);
+  const nextColor = nextSide === "attack" ? ATK : DEF;
+
+  function dot(r, i, offset) {
+    const side = getSide(offset + i);
+    const col = side === "attack" ? ATK : DEF;
+    return (
+      <div key={i} style={{
+        width: 28, height: 28, borderRadius: 6, flexShrink: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 10, fontWeight: 700,
+        background: r.win ? col + "22" : "rgba(255,255,255,0.04)",
+        color: r.win ? col : "rgba(255,255,255,0.2)",
+        border: `1px solid ${r.win ? col + "44" : "rgba(255,255,255,0.07)"}`,
+      }}>{r.win ? "W" : "L"}</div>
+    );
+  }
+
+  const sideBtn = (val, label, col) => (
+    <button
+      key={val}
+      onClick={() => setStartingSide(v => v === val ? null : val)}
+      style={{
+        padding: "6px 18px", borderRadius: 8, cursor: "pointer",
+        border: `1px solid ${startingSide === val ? col + "55" : "rgba(255,255,255,0.1)"}`,
+        background: startingSide === val ? col + "18" : "transparent",
+        color: startingSide === val ? col : "rgba(255,255,255,0.35)",
+        fontSize: 12, fontWeight: startingSide === val ? 600 : 400,
+        fontFamily: "'Outfit', sans-serif", transition: "all 0.15s",
+      }}
+    >{label}</button>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, animation: "fadeUp 0.45s ease-out both" }}>
+
+      {/* Setup card */}
+      <div style={{
+        padding: "20px 24px", borderRadius: 12,
+        background: "rgba(255,255,255,0.02)",
+        border: "1px solid rgba(255,255,255,0.07)",
+      }}>
+        <p style={{ fontSize: 10, letterSpacing: 3, color: "rgba(255,255,255,0.2)", textTransform: "uppercase", margin: "0 0 18px" }}>
+          Match Setup
+        </p>
+        <div style={{ display: "flex", gap: 32, flexWrap: "wrap", alignItems: "flex-start" }}>
+          <div>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", margin: "0 0 8px" }}>Player starts as</p>
+            <div style={{ display: "flex", gap: 6 }}>
+              {sideBtn("attack", "Attack", ATK)}
+              {sideBtn("defend", "Defend", DEF)}
+            </div>
+          </div>
+          <div>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", margin: "0 0 8px" }}>Starting score</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <ScoreSpinner value={startScore.me} onChange={v => setStartScore(s => ({ ...s, me: v }))} />
+              <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 18, fontWeight: 300 }}>:</span>
+              <ScoreSpinner value={startScore.them} onChange={v => setStartScore(s => ({ ...s, them: v }))} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Rounds card */}
+      {startingSide && (
+        <div style={{
+          padding: "20px 24px", borderRadius: 12,
+          background: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          animation: "fadeUp 0.35s ease-out both",
+        }}>
+          {/* Live score */}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 16 }}>
+            <span style={{ fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: 1 }}>{score.me}</span>
+            <span style={{ fontSize: 16, color: "rgba(255,255,255,0.2)" }}>:</span>
+            <span style={{ fontSize: 26, fontWeight: 700, color: "rgba(255,255,255,0.3)" }}>{score.them}</span>
+            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 2, textTransform: "uppercase", marginLeft: 8 }}>
+              Round {totalStart + rounds.length + 1}
+            </span>
+          </div>
+
+          {/* Round dots */}
+          {rounds.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
+              {rounds.map((r, i) => dot(r, i, 0))}
+            </div>
+          )}
+
+          {/* Add round */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", letterSpacing: 1.5, textTransform: "uppercase", marginRight: 2 }}>
+              {nextSide}
+            </span>
+            <button
+              onClick={() => setRounds(r => [...r, { win: true }])}
+              style={{
+                padding: "5px 18px", borderRadius: 7, cursor: "pointer",
+                border: `1px solid ${nextColor}44`,
+                background: nextColor + "14",
+                color: nextColor, fontSize: 12, fontWeight: 600,
+                fontFamily: "'Outfit', sans-serif",
+              }}
+            >Win</button>
+            <button
+              onClick={() => setRounds(r => [...r, { win: false }])}
+              style={{
+                padding: "5px 18px", borderRadius: 7, cursor: "pointer",
+                border: "1px solid rgba(255,255,255,0.1)",
+                background: "rgba(255,255,255,0.04)",
+                color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 400,
+                fontFamily: "'Outfit', sans-serif",
+              }}
+            >Loss</button>
+            {rounds.length > 0 && (
+              <button
+                onClick={() => setRounds(r => r.slice(0, -1))}
+                style={{
+                  marginLeft: "auto", background: "none", border: "none",
+                  color: "rgba(255,255,255,0.2)", fontSize: 11,
+                  cursor: "pointer", fontFamily: "'Outfit', sans-serif",
+                  transition: "color 0.15s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.5)"}
+                onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.2)"}
+              >undo</button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
