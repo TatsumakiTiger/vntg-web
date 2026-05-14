@@ -891,6 +891,7 @@ function GameAnalyzerView({ video, onClear }) {
   const [startingSide, setStartingSide] = useState(null);
   const [startScore, setStartScore] = useState({ me: 0, them: 0 });
   const [rounds, setRounds] = useState([]);
+  const [isOvertime, setIsOvertime] = useState(false);
   const [instrCount, setInstrCount] = useState(savedPhase === "working" ? Infinity : 0);
 
   // Compute target corner position — scroll-independent: use offsetHeight, not getBoundingClientRect
@@ -992,16 +993,39 @@ function GameAnalyzerView({ video, onClear }) {
   const isFixed = ["shrunk", "moving", "typing", "working"].includes(phase);
   const showText = phase === "typing" || phase === "working";
 
+  /* ── Compact panel computations for HUD portal ── */
+  const ATK_C = "#F87171", DEF_C = "#60A5FA";
+  const cScore = rounds.reduce(
+    (acc, r) => ({ me: acc.me + (r.win ? 1 : 0), them: acc.them + (!r.win ? 1 : 0) }),
+    startScore
+  );
+  const cTotalStart = startScore.me + startScore.them;
+  function getCSide(idx) {
+    const total = cTotalStart + idx;
+    if (isOvertime) {
+      const ot = idx - (24 - cTotalStart);
+      return Math.floor(ot / 2) % 2 === 0
+        ? (startingSide === "attack" ? "defend" : "attack")
+        : startingSide;
+    }
+    return total >= 12 ? (startingSide === "attack" ? "defend" : "attack") : startingSide;
+  }
+  const cNext = startingSide ? getCSide(rounds.length) : null;
+  const cNextColor = cNext === "attack" ? ATK_C : DEF_C;
+  const cTied12 = cScore.me === 12 && cScore.them === 12 && !isOvertime;
+  const cGameOver = !isOvertime && startingSide && (cScore.me >= 13 || cScore.them >= 13);
+
   /* ── Compact fixed HUD — portaled to body to escape fadeUp transform ── */
   if (isFixed) {
     const pos = phase === "shrunk" ? fixedStart : cornerPos;
     const hud = createPortal(
+      <>
       <div style={{
         position: "fixed",
         top: pos?.top ?? cornerPos.top,
         left: pos?.left ?? cornerPos.left,
         zIndex: 100,
-        background: "rgba(8,8,12,0.92)",
+        background: "rgba(18,18,26,0.95)",
         border: "1px solid rgba(255,255,255,0.1)",
         borderRadius: 10,
         backdropFilter: "blur(16px)",
@@ -1072,7 +1096,62 @@ function GameAnalyzerView({ video, onClear }) {
             onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.2)"}
           >✕</button>
         )}
-      </div>,
+      </div>
+
+      {/* Compact round tracker — appears below HUD pill after side selected */}
+      {phase === "working" && startingSide && (
+        <div style={{
+          position: "fixed",
+          top: (pos?.top ?? cornerPos.top) + 50,
+          left: pos?.left ?? cornerPos.left,
+          width: 260,
+          background: "rgba(18,18,26,0.95)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 10,
+          backdropFilter: "blur(16px)",
+          padding: "10px 12px",
+          fontFamily: "'Outfit', sans-serif",
+          animation: "fadeUp 0.35s ease-out both",
+          zIndex: 100,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+        }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: rounds.length > 0 ? 8 : 0 }}>
+            <span style={{ fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: 0.5 }}>{cScore.me}</span>
+            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.2)" }}>:</span>
+            <span style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.3)" }}>{cScore.them}</span>
+            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 2, textTransform: "uppercase", marginLeft: 6 }}>
+              R{cTotalStart + rounds.length + 1}
+            </span>
+          </div>
+          {rounds.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginBottom: 8 }}>
+              {rounds.map((r, i) => {
+                const s = getCSide(i); const c = s === "attack" ? ATK_C : DEF_C;
+                return <div key={i} style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, background: r.win ? c + "22" : "rgba(255,255,255,0.04)", color: r.win ? c : "rgba(255,255,255,0.2)", border: `1px solid ${r.win ? c + "44" : "rgba(255,255,255,0.07)"}` }}>{r.win ? "W" : "L"}</div>;
+              })}
+            </div>
+          )}
+          {cTied12 ? (
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <button onClick={() => setIsOvertime(true)} style={{ flex: 1, padding: "5px 0", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(201,168,76,0.4)", background: "rgba(201,168,76,0.1)", color: "#C9A84C", fontSize: 11, fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>Overtime</button>
+              {rounds.length > 0 && <button onClick={() => setRounds(r => r.slice(0, -1))} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.2)", fontSize: 10, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }} onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.5)"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.2)"}>undo</button>}
+            </div>
+          ) : cGameOver ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, color: cScore.me > cScore.them ? "#4ADE80" : "#F87171", fontWeight: 600 }}>{cScore.me > cScore.them ? "Victory" : "Defeat"}</span>
+              {rounds.length > 0 && <button onClick={() => setRounds(r => r.slice(0, -1))} style={{ marginLeft: "auto", background: "none", border: "none", color: "rgba(255,255,255,0.2)", fontSize: 10, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }} onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.5)"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.2)"}>undo</button>}
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <span style={{ fontSize: 9, color: cNextColor, letterSpacing: 1.5, textTransform: "uppercase", opacity: 0.7 }}>{cNext}</span>
+              <button onClick={() => setRounds(r => [...r, { win: true }])} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "5px 0", borderRadius: 6, cursor: "pointer", border: `1px solid ${cNextColor}44`, background: cNextColor + "14", color: cNextColor, fontSize: 11, fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>Win</button>
+              <button onClick={() => setRounds(r => [...r, { win: false }])} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "5px 0", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: 500, fontFamily: "'Outfit', sans-serif" }}>Loss</button>
+              {rounds.length > 0 && <button onClick={() => setRounds(r => r.slice(0, -1))} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.2)", fontSize: 10, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }} onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.5)"} onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.2)"}>undo</button>}
+            </div>
+          )}
+        </div>
+      )}
+      </>,
       document.body
     );
 
@@ -1095,15 +1174,24 @@ function GameAnalyzerView({ video, onClear }) {
                 )}
               </p>
             </div>
-            <RoundSetupPanel
-              agentColor={agentColor}
-              startingSide={startingSide}
-              setStartingSide={setStartingSide}
-              startScore={startScore}
-              setStartScore={setStartScore}
-              rounds={rounds}
-              setRounds={setRounds}
-            />
+            <div style={{
+              overflow: "hidden",
+              maxHeight: startingSide ? "0px" : "2000px",
+              opacity: startingSide ? 0 : 1,
+              transition: "max-height 0.5s ease, opacity 0.3s ease",
+            }}>
+              <RoundSetupPanel
+                agentColor={agentColor}
+                startingSide={startingSide}
+                setStartingSide={setStartingSide}
+                startScore={startScore}
+                setStartScore={setStartScore}
+                rounds={rounds}
+                setRounds={setRounds}
+                isOvertime={isOvertime}
+                setIsOvertime={setIsOvertime}
+              />
+            </div>
           </div>
         )}
       </>
@@ -1238,10 +1326,9 @@ function ScoreSpinner({ value, onChange }) {
 }
 
 /* ── Round Setup Panel ── */
-function RoundSetupPanel({ agentColor, startingSide, setStartingSide, startScore, setStartScore, rounds, setRounds }) {
+function RoundSetupPanel({ agentColor, startingSide, setStartingSide, startScore, setStartScore, rounds, setRounds, isOvertime, setIsOvertime }) {
   const ATK = "#F87171";
   const DEF = "#60A5FA";
-  const [isOvertime, setIsOvertime] = useState(false);
 
   function getSide(roundIdx) {
     const total = startScore.me + startScore.them + roundIdx;
