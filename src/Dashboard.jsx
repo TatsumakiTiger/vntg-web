@@ -891,6 +891,7 @@ function GameAnalyzerView({ video, onClear }) {
   const [startingSide, setStartingSide] = useState(null);
   const [startScore, setStartScore] = useState({ me: 0, them: 0 });
   const [rounds, setRounds] = useState([]);
+  const [instrCount, setInstrCount] = useState(savedPhase === "working" ? Infinity : 0);
 
   // Compute target corner position — scroll-independent: use offsetHeight, not getBoundingClientRect
   const [cornerPos] = useState(() => {
@@ -911,10 +912,11 @@ function GameAnalyzerView({ video, onClear }) {
     }
   }, [phase]);
 
-  const T = "Ready to analyze";
+  const T = "Now analyzing";
   const S = `${video.agent} · ${video.map}`;
-  const H = "Open the VOD";
-  const FOCUS_OPTIONS = ["Start Tracking"];
+  const H = "What do you want to focus on?";
+  const FOCUS_OPTIONS = ["Positioning"];
+  const INSTR = "Open the VOD and select which side you started on.";
   const MAX = Math.max(T.length, S.length, H.length);
   const cut = (str) => str.slice(0, Math.ceil(str.length * Math.max(0, 1 - charsGone / MAX)));
   const isErasing = phase === "erasing";
@@ -961,6 +963,18 @@ function GameAnalyzerView({ video, onClear }) {
       setTypedCount(i);
       if (i >= FULL_LEN) { clearInterval(id); setPhase("working"); }
     }, 85);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  /* type instruction after phase → working */
+  useEffect(() => {
+    if (phase !== "working") return;
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setInstrCount(i);
+      if (i >= INSTR.length) clearInterval(id);
+    }, 38);
     return () => clearInterval(id);
   }, [phase]);
 
@@ -1066,15 +1080,23 @@ function GameAnalyzerView({ video, onClear }) {
       <>
         {hud}
         {phase === "working" && (
-          <RoundSetupPanel
-            agentColor={agentColor}
-            startingSide={startingSide}
-            setStartingSide={setStartingSide}
-            startScore={startScore}
-            setStartScore={setStartScore}
-            rounds={rounds}
-            setRounds={setRounds}
-          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, animation: "fadeUp 0.4s ease-out both" }}>
+            <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.45)", fontFamily: "'Outfit', sans-serif", letterSpacing: 0.2 }}>
+              {INSTR.slice(0, instrCount)}
+              {instrCount < INSTR.length && (
+                <span style={{ color: "rgba(255,255,255,0.3)", animation: "blink 0.6s step-end infinite" }}>|</span>
+              )}
+            </p>
+            <RoundSetupPanel
+              agentColor={agentColor}
+              startingSide={startingSide}
+              setStartingSide={setStartingSide}
+              startScore={startScore}
+              setStartScore={setStartScore}
+              rounds={rounds}
+              setRounds={setRounds}
+            />
+          </div>
         )}
       </>
     );
@@ -1100,7 +1122,7 @@ function GameAnalyzerView({ video, onClear }) {
         background: "rgba(255,255,255,0.03)",
         border: `1px solid ${agentColor}22`,
         borderRadius: 14,
-        padding: "64px 40px 52px",
+        padding: "72px 40px",
       }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
 
@@ -1109,7 +1131,7 @@ function GameAnalyzerView({ video, onClear }) {
             overflow: "hidden",
             maxHeight: tGone ? "0px" : "2em",
             opacity: tGone ? 0 : 1,
-            marginBottom: tGone ? 0 : 16,
+            marginBottom: tGone ? 0 : 20,
             transition: COLLAPSE,
             ...stagger(0),
           }}>
@@ -1117,10 +1139,10 @@ function GameAnalyzerView({ video, onClear }) {
           </div>
 
           {!isErasing ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28, ...stagger(90) }}>
-              <span style={{ fontSize: 13, color: agentColor, fontWeight: 600, letterSpacing: 0.5 }}>{video.agent}</span>
-              <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 11 }}>·</span>
-              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>{video.map}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48, ...stagger(90) }}>
+              <span style={{ fontSize: 15, color: agentColor, fontWeight: 600, letterSpacing: 0.5 }}>{video.agent}</span>
+              <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>·</span>
+              <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map}</span>
             </div>
           ) : (
             <div style={{
@@ -1128,7 +1150,7 @@ function GameAnalyzerView({ video, onClear }) {
               overflow: "hidden",
               maxHeight: sGone ? "0px" : "3em",
               opacity: sGone ? 0 : 1,
-              marginBottom: sGone ? 0 : 28,
+              marginBottom: sGone ? 0 : 48,
               transition: COLLAPSE,
             }}>
               {(() => {
@@ -1140,9 +1162,9 @@ function GameAnalyzerView({ video, onClear }) {
                 const onMap = mShow > 0, onSep = !onMap && sepShow > 0;
                 return (
                   <>
-                    {aShow > 0 && <span style={{ fontSize: 13, color: agentColor, fontWeight: 600 }}>{video.agent.slice(0, aShow)}{!onSep && !onMap && cur}</span>}
-                    {sepShow > 0 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 11 }}>{" · ".slice(0, sepShow)}{onSep && cur}</span>}
-                    {mShow > 0 && <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>{video.map.slice(0, mShow)}{onMap && cur}</span>}
+                    {aShow > 0 && <span style={{ fontSize: 15, color: agentColor, fontWeight: 600 }}>{video.agent.slice(0, aShow)}{!onSep && !onMap && cur}</span>}
+                    {sepShow > 0 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>{" · ".slice(0, sepShow)}{onSep && cur}</span>}
+                    {mShow > 0 && <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map.slice(0, mShow)}{onMap && cur}</span>}
                   </>
                 );
               })()}
@@ -1151,29 +1173,26 @@ function GameAnalyzerView({ video, onClear }) {
 
           <div style={{
             overflow: "hidden",
-            maxHeight: hGone ? "0px" : "6em",
+            maxHeight: hGone ? "0px" : "3em",
             opacity: hGone ? 0 : 1,
-            marginBottom: hGone ? 0 : 10,
+            marginBottom: hGone ? 0 : 24,
             transition: COLLAPSE,
-            ...stagger(200),
+            ...stagger(280),
           }}>
-            <p style={{ fontSize: 42, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: -1, lineHeight: 1.05 }}>
+            <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.88)", margin: 0, letterSpacing: 0.3 }}>
               {cut(H)}{cut(H) ? cur : null}
             </p>
           </div>
 
-          {/* Subtitle + CTA + disclaimer */}
           <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 20,
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 14,
             overflow: "hidden",
-            maxHeight: isErasing ? "0px" : "400px",
+            maxHeight: isErasing ? "0px" : "160px",
             opacity: isErasing ? 0 : 1,
+            marginBottom: isErasing ? 0 : 8,
             transition: COLLAPSE,
-            ...stagger(320),
+            ...stagger(390),
           }}>
-            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.32)", margin: 0, fontWeight: 400 }}>
-              and go to the start of the match
-            </p>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
               {FOCUS_OPTIONS.map(opt => (
                 <FocusChip
@@ -1184,11 +1203,7 @@ function GameAnalyzerView({ video, onClear }) {
                 />
               ))}
             </div>
-            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.18)", maxWidth: 360, lineHeight: 1.65, margin: 0, textAlign: "center" }}>
-              ⚠ Some VODs don't start from round 1 or may be trimmed if nothing happened early on.
-            </p>
           </div>
-
         </div>
       </div>
     </div>
@@ -1218,9 +1233,17 @@ function ScoreSpinner({ value, onChange }) {
 function RoundSetupPanel({ agentColor, startingSide, setStartingSide, startScore, setStartScore, rounds, setRounds }) {
   const ATK = "#F87171";
   const DEF = "#60A5FA";
+  const [isOvertime, setIsOvertime] = useState(false);
 
   function getSide(roundIdx) {
     const total = startScore.me + startScore.them + roundIdx;
+    if (isOvertime) {
+      const otRound = roundIdx - (24 - startScore.me - startScore.them);
+      const phase = Math.floor(otRound / 2) % 2;
+      return phase === 0
+        ? (startingSide === "attack" ? "defend" : "attack")
+        : startingSide;
+    }
     if (total >= 12) return startingSide === "attack" ? "defend" : "attack";
     return startingSide;
   }
@@ -1231,6 +1254,9 @@ function RoundSetupPanel({ agentColor, startingSide, setStartingSide, startScore
   );
 
   const totalStart = startScore.me + startScore.them;
+  const isOvertimeReady = score.me === 13 && score.them === 13;
+  const isTied12 = score.me === 12 && score.them === 12 && !isOvertime;
+  const gameOver = !isOvertime && (score.me >= 13 || score.them >= 13);
 
   const nextSide = getSide(rounds.length);
   const nextColor = nextSide === "attack" ? ATK : DEF;
@@ -1318,47 +1344,80 @@ function RoundSetupPanel({ agentColor, startingSide, setStartingSide, startScore
             </div>
           )}
 
-          {/* Add round */}
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: 10, color: nextColor, letterSpacing: 1.5, textTransform: "uppercase", opacity: 0.7 }}>
-              {nextSide}
-            </span>
-            <button
-              onClick={() => setRounds(r => [...r, { win: true }])}
-              style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "6px 0", borderRadius: 7, cursor: "pointer",
-                border: `1px solid ${nextColor}44`,
-                background: nextColor + "14",
-                color: nextColor, fontSize: 12, fontWeight: 600,
-                fontFamily: "'Outfit', sans-serif", transition: "all 0.15s",
-              }}
-            >Win</button>
-            <button
-              onClick={() => setRounds(r => [...r, { win: false }])}
-              style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "6px 0", borderRadius: 7, cursor: "pointer",
-                border: "1px solid rgba(255,255,255,0.1)",
-                background: "rgba(255,255,255,0.06)",
-                color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 500,
-                fontFamily: "'Outfit', sans-serif", transition: "all 0.15s",
-              }}
-            >Loss</button>
-            {rounds.length > 0 && (
+          {/* Add round / overtime / game over */}
+          {isTied12 ? (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <button
-                onClick={() => setRounds(r => r.slice(0, -1))}
+                onClick={() => setIsOvertime(true)}
                 style={{
-                  marginLeft: "auto", background: "none", border: "none",
-                  color: "rgba(255,255,255,0.2)", fontSize: 11,
-                  cursor: "pointer", fontFamily: "'Outfit', sans-serif",
-                  transition: "color 0.15s",
+                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                  padding: "6px 0", borderRadius: 7, cursor: "pointer",
+                  border: "1px solid rgba(201,168,76,0.4)",
+                  background: "rgba(201,168,76,0.1)",
+                  color: "#C9A84C", fontSize: 12, fontWeight: 600,
+                  fontFamily: "'Outfit', sans-serif", transition: "all 0.15s",
                 }}
-                onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.5)"}
-                onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.2)"}
-              >undo</button>
-            )}
-          </div>
+              >Overtime</button>
+              {rounds.length > 0 && (
+                <button
+                  onClick={() => setRounds(r => r.slice(0, -1))}
+                  style={{ background: "none", border: "none", color: "rgba(255,255,255,0.2)", fontSize: 11, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "color 0.15s" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.5)"}
+                  onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.2)"}
+                >undo</button>
+              )}
+            </div>
+          ) : gameOver ? (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <span style={{ fontSize: 11, color: score.me > score.them ? "#4ADE80" : "#F87171", fontWeight: 600, letterSpacing: 0.5 }}>
+                {score.me > score.them ? "Victory" : "Defeat"}
+              </span>
+              {rounds.length > 0 && (
+                <button
+                  onClick={() => setRounds(r => r.slice(0, -1))}
+                  style={{ marginLeft: "auto", background: "none", border: "none", color: "rgba(255,255,255,0.2)", fontSize: 11, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "color 0.15s" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.5)"}
+                  onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.2)"}
+                >undo</button>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <span style={{ fontSize: 10, color: nextColor, letterSpacing: 1.5, textTransform: "uppercase", opacity: 0.7 }}>
+                {nextSide}
+              </span>
+              <button
+                onClick={() => setRounds(r => [...r, { win: true }])}
+                style={{
+                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                  padding: "6px 0", borderRadius: 7, cursor: "pointer",
+                  border: `1px solid ${nextColor}44`,
+                  background: nextColor + "14",
+                  color: nextColor, fontSize: 12, fontWeight: 600,
+                  fontFamily: "'Outfit', sans-serif", transition: "all 0.15s",
+                }}
+              >Win</button>
+              <button
+                onClick={() => setRounds(r => [...r, { win: false }])}
+                style={{
+                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+                  padding: "6px 0", borderRadius: 7, cursor: "pointer",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(255,255,255,0.06)",
+                  color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 500,
+                  fontFamily: "'Outfit', sans-serif", transition: "all 0.15s",
+                }}
+              >Loss</button>
+              {rounds.length > 0 && (
+                <button
+                  onClick={() => setRounds(r => r.slice(0, -1))}
+                  style={{ marginLeft: "auto", background: "none", border: "none", color: "rgba(255,255,255,0.2)", fontSize: 11, cursor: "pointer", fontFamily: "'Outfit', sans-serif", transition: "color 0.15s" }}
+                  onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.5)"}
+                  onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.2)"}
+                >undo</button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
