@@ -994,7 +994,7 @@ function GameAnalyzerView({ video, onClear }) {
   const showText = phase === "typing" || phase === "working";
 
   /* ── Compact panel computations for HUD portal ── */
-  const ATK_C = "#F87171", DEF_C = "#60A5FA";
+  const ATK_C = "#F87171", DEF_C = "#94A3B8";
   const cScore = rounds.reduce(
     (acc, r) => ({ me: acc.me + (r.win ? 1 : 0), them: acc.them + (!r.win ? 1 : 0) }),
     startScore
@@ -1108,7 +1108,7 @@ function GameAnalyzerView({ video, onClear }) {
           backdropFilter: "blur(16px)",
           padding: "10px 12px",
           fontFamily: "'Outfit', sans-serif",
-          animation: "fadeUp 0.35s ease-out both",
+          animation: "fadeUp 0.28s 0.32s ease-out both",
           zIndex: 100,
           boxShadow: `0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px ${agentColor}0d`,
         }}>
@@ -1126,9 +1126,9 @@ function GameAnalyzerView({ video, onClear }) {
             </div>
           )}
           <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: rounds.length > 0 ? 8 : 6 }}>
-            <span style={{ fontSize: 24, fontWeight: 700, color: agentColor, letterSpacing: 0.5 }}>{cScore.me}</span>
+            <span style={{ fontSize: 24, fontWeight: 700, color: "#fff", letterSpacing: 0.5 }}>{cScore.me}</span>
             <span style={{ fontSize: 13, color: "rgba(255,255,255,0.15)" }}>:</span>
-            <span style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.22)" }}>{cScore.them}</span>
+            <span style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.32)" }}>{cScore.them}</span>
             <span style={{ fontSize: 9, color: "rgba(255,255,255,0.18)", letterSpacing: 2, textTransform: "uppercase", marginLeft: 8 }}>
               R{cTotalStart + rounds.length + 1}
             </span>
@@ -1190,7 +1190,7 @@ function GameAnalyzerView({ video, onClear }) {
                   >Attack</button>
                   <button
                     onClick={() => setStartingSide("defend")}
-                    style={{ padding: "7px 22px", borderRadius: 8, cursor: "pointer", border: "1px solid rgba(96,165,250,0.45)", background: "rgba(96,165,250,0.1)", color: "#60A5FA", fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif", transition: "all 0.15s" }}
+                    style={{ padding: "7px 22px", borderRadius: 8, cursor: "pointer", border: "1px solid rgba(148,163,184,0.4)", background: "rgba(148,163,184,0.08)", color: "#94A3B8", fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif", transition: "all 0.15s" }}
                   >Defend</button>
                 </div>
               )}
@@ -1331,7 +1331,7 @@ function ScoreSpinner({ value, onChange }) {
 /* ── Round Setup Panel ── */
 function RoundSetupPanel({ agentColor, startingSide, setStartingSide, startScore, setStartScore, rounds, setRounds, isOvertime, setIsOvertime }) {
   const ATK = "#F87171";
-  const DEF = "#60A5FA";
+  const DEF = "#94A3B8";
 
   function getSide(roundIdx) {
     const total = startScore.me + startScore.them + roundIdx;
