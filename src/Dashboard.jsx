@@ -781,16 +781,14 @@ export default function Dashboard() {
               <p style={styles.modalSub}>
                 Select your main. Whenever a new VOD with that agent drops, you'll get a Discord DM with a link.
               </p>
-              <select
-                value={selectedAgent || subscribedAgent || ""}
-                onChange={e => setSelectedAgent(e.target.value)}
-                style={styles.subSelect}
-              >
-                <option value="">Select your main</option>
-                {Object.keys(AGENT_COLORS).sort().map(a => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
+              <div style={{ width: "100%" }}>
+                <Select
+                  value={selectedAgent || subscribedAgent || ""}
+                  onChange={v => setSelectedAgent(v)}
+                  placeholder="Select your main"
+                  options={Object.keys(AGENT_COLORS).sort()}
+                />
+              </div>
               {subscribedAgent && (
                 <p style={styles.subCurrent}>
                   Currently subscribed to: <span style={{ color: AGENT_COLORS[subscribedAgent] || "#C9A84C" }}>{subscribedAgent}</span>
@@ -2370,7 +2368,7 @@ const styles = {
   modalSub: { fontSize: 13, color: "rgba(255,255,255,0.3)", fontFamily: "'Outfit', sans-serif" },
   modalEmail: { fontSize: 15, color: "#C9A84C", fontFamily: "'Outfit', sans-serif", fontWeight: 600, textDecoration: "none", letterSpacing: 0.3 },
   modalClose: { marginTop: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 100, padding: "8px 24px", color: "rgba(255,255,255,0.5)", fontSize: 13, fontFamily: "'Outfit', sans-serif", cursor: "pointer" },
-  subSelect: { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", color: "#fff", fontSize: 14, fontFamily: "'Outfit', sans-serif", outline: "none", width: "100%", cursor: "pointer", colorScheme: "dark" },
+
   subCurrent: { fontSize: 12, color: "rgba(255,255,255,0.3)", fontFamily: "'Outfit', sans-serif" },
   subConfirm: { background: "rgba(201,168,76,0.12)", borderColor: "rgba(201,168,76,0.25)", color: "#C9A84C" },
   fixBtn: { background: "none", border: "none", color: "#C9A84C", fontSize: 12, fontFamily: "'Outfit', sans-serif", cursor: "pointer", padding: 0, fontWeight: 500, letterSpacing: 0.3, textDecoration: "underline", textUnderlineOffset: 3 },
