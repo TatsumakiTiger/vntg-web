@@ -1029,75 +1029,69 @@ function GameAnalyzerView({ video, onClear }) {
         left: pos?.left ?? cornerPos.left,
         zIndex: 100,
         background: "rgba(18,18,26,0.95)",
-        border: "1px solid rgba(255,255,255,0.1)",
+        border: `1px solid ${agentColor}33`,
         borderRadius: 10,
         backdropFilter: "blur(16px)",
-        display: "inline-flex",
+        display: "flex",
         alignItems: "center",
-        gap: showText && typedCount > 0 ? 10 : 0,
-        padding: "7px",
+        width: 260,
+        padding: "7px 10px",
         transition: phase === "moving" ? "top 0.9s cubic-bezier(0.4,0,0.2,1), left 0.9s cubic-bezier(0.4,0,0.2,1)" : "none",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+        boxShadow: `0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px ${agentColor}0d`,
         fontFamily: "'Outfit', sans-serif",
       }}>
-        {/* Discreet ▶ with tooltip */}
+        {/* ▶ Play */}
         <div style={{ position: "relative", flexShrink: 0 }}>
           <a
             href={`https://www.youtube.com/watch?v=${video.video_id}`}
             target="_blank" rel="noopener noreferrer"
             style={{
               width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center",
-              borderRadius: 7, background: hudPlayHover ? "rgba(255,255,255,0.13)" : "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: hudPlayHover ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.55)",
+              borderRadius: 7,
+              background: hudPlayHover ? `${agentColor}22` : "rgba(255,255,255,0.05)",
+              border: `1px solid ${hudPlayHover ? agentColor + "55" : "rgba(255,255,255,0.09)"}`,
+              color: hudPlayHover ? agentColor : "rgba(255,255,255,0.45)",
               fontSize: 10, textDecoration: "none",
-              transition: "background 0.15s, color 0.15s",
+              transition: "background 0.15s, color 0.15s, border-color 0.15s",
             }}
             onMouseEnter={() => setHudPlayHover(true)}
             onMouseLeave={() => setHudPlayHover(false)}
           >▶</a>
           {hudPlayHover && (
             <div style={{
-              position: "absolute",
-              top: "calc(100% + 7px)",
-              left: "50%",
-              transform: "translateX(-50%)",
-              background: "rgba(8,8,12,0.95)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 6,
-              padding: "4px 9px",
-              fontSize: 11,
-              fontFamily: "'Outfit', sans-serif",
-              color: "rgba(255,255,255,0.75)",
-              whiteSpace: "nowrap",
-              pointerEvents: "none",
-              animation: "fadeUp 0.12s ease-out both",
-            }}>
-              Open on YouTube
-            </div>
+              position: "absolute", top: "calc(100% + 7px)", left: "50%", transform: "translateX(-50%)",
+              background: "rgba(12,12,18,0.97)", border: "1px solid rgba(255,255,255,0.09)",
+              borderRadius: 6, padding: "4px 9px", fontSize: 11,
+              fontFamily: "'Outfit', sans-serif", color: "rgba(255,255,255,0.6)",
+              whiteSpace: "nowrap", pointerEvents: "none", animation: "fadeUp 0.12s ease-out both",
+            }}>Open on YouTube</div>
           )}
         </div>
 
-        {/* Typed colored info */}
-        {showText && typedCount > 0 && (
-          <span style={{ fontSize: 11, whiteSpace: "nowrap", letterSpacing: 0.2, paddingLeft: 2, paddingRight: 4 }}>
-            {renderInfo(typedCount)}
-            {phase === "typing" && <span style={{ color: "rgba(255,255,255,0.4)", animation: "blink 0.6s step-end infinite" }}>|</span>}
-          </span>
-        )}
+        {/* Typed info — centered */}
+        <span style={{ flex: 1, textAlign: "center", fontSize: 12, whiteSpace: "nowrap", letterSpacing: 0.3, padding: "0 6px" }}>
+          {showText && typedCount > 0 && (
+            <>
+              {renderInfo(typedCount)}
+              {phase === "typing" && <span style={{ color: "rgba(255,255,255,0.35)", animation: "blink 0.6s step-end infinite" }}>|</span>}
+            </>
+          )}
+        </span>
 
-        {/* Cancel */}
-        {phase === "working" && (
+        {/* Cancel OR symmetry spacer */}
+        {phase === "working" ? (
           <button
             onClick={onClear}
             style={{
-              background: "none", border: "none", cursor: "pointer",
-              color: "rgba(255,255,255,0.2)", fontSize: 11, lineHeight: 1,
-              padding: "0 2px 0 4px", transition: "color 0.15s",
+              flexShrink: 0, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center",
+              background: "none", border: "none", cursor: "pointer", borderRadius: 7,
+              color: "rgba(255,255,255,0.18)", fontSize: 11, transition: "color 0.15s",
             }}
-            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.6)"}
-            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.2)"}
+            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.55)"}
+            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.18)"}
           >✕</button>
+        ) : (
+          <div style={{ width: 30, flexShrink: 0 }} />
         )}
       </div>
 
@@ -1105,18 +1099,18 @@ function GameAnalyzerView({ video, onClear }) {
       {phase === "working" && startingSide && (
         <div style={{
           position: "fixed",
-          top: (pos?.top ?? cornerPos.top) + 50,
+          top: (pos?.top ?? cornerPos.top) + 52,
           left: pos?.left ?? cornerPos.left,
           width: 260,
           background: "rgba(18,18,26,0.95)",
-          border: "1px solid rgba(255,255,255,0.1)",
+          border: `1px solid ${agentColor}33`,
           borderRadius: 10,
           backdropFilter: "blur(16px)",
           padding: "10px 12px",
           fontFamily: "'Outfit', sans-serif",
           animation: "fadeUp 0.35s ease-out both",
           zIndex: 100,
-          boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+          boxShadow: `0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px ${agentColor}0d`,
         }}>
           {rounds.length === 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
@@ -1131,11 +1125,11 @@ function GameAnalyzerView({ video, onClear }) {
               ))}
             </div>
           )}
-          <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: rounds.length > 0 ? 8 : 0 }}>
-            <span style={{ fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: 0.5 }}>{cScore.me}</span>
-            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.2)" }}>:</span>
-            <span style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.3)" }}>{cScore.them}</span>
-            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 2, textTransform: "uppercase", marginLeft: 6 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: rounds.length > 0 ? 8 : 6 }}>
+            <span style={{ fontSize: 24, fontWeight: 700, color: agentColor, letterSpacing: 0.5 }}>{cScore.me}</span>
+            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.15)" }}>:</span>
+            <span style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.22)" }}>{cScore.them}</span>
+            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.18)", letterSpacing: 2, textTransform: "uppercase", marginLeft: 8 }}>
               R{cTotalStart + rounds.length + 1}
             </span>
           </div>
