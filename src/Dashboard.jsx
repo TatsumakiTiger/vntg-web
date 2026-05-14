@@ -1127,9 +1127,21 @@ function GameAnalyzerView({ video, onClear }) {
               marginBottom: sGone ? 0 : 48,
               transition: COLLAPSE,
             }}>
-              <span style={{ fontSize: 15, color: agentColor, fontWeight: 600 }}>
-                {cut(S)}{cut(S) ? cur : null}
-              </span>
+              {(() => {
+                const kept = Math.ceil(S.length * Math.max(0, 1 - charsGone / MAX));
+                const aLen = video.agent.length, sepLen = 3, mLen = video.map.length;
+                const aShow = Math.min(aLen, kept);
+                const sepShow = Math.min(sepLen, Math.max(0, kept - aLen));
+                const mShow = Math.min(mLen, Math.max(0, kept - aLen - sepLen));
+                const onMap = mShow > 0, onSep = !onMap && sepShow > 0;
+                return (
+                  <>
+                    {aShow > 0 && <span style={{ fontSize: 15, color: agentColor, fontWeight: 600 }}>{video.agent.slice(0, aShow)}{!onSep && !onMap && cur}</span>}
+                    {sepShow > 0 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>{" · ".slice(0, sepShow)}{onSep && cur}</span>}
+                    {mShow > 0 && <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map.slice(0, mShow)}{onMap && cur}</span>}
+                  </>
+                );
+              })()}
             </div>
           )}
 
