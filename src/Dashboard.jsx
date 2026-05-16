@@ -1124,7 +1124,7 @@ function GameAnalyzerView({ video, onClear }) {
                       <button onClick={() => setStartScore(s => ({ ...s, [k]: s[k] + 1 }))} style={{ width: 16, height: 16, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", fontSize: 10, cursor: "pointer", lineHeight: 1, padding: 0, fontFamily: "'Outfit', sans-serif" }}>+</button>
                     </span>
                   ))}
-                  <button onClick={() => setShowScoreEdit(false)} style={{ marginLeft: 4, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", fontSize: 9, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", letterSpacing: 0.8, fontWeight: 600, borderRadius: 4, padding: "2px 7px" }}>done</button>
+                  <button onClick={() => setShowScoreEdit(false)} style={{ marginLeft: 4, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", fontSize: 12, color: "rgba(255,255,255,0.4)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", borderRadius: 4, padding: "2px 7px", lineHeight: 1 }}>✓</button>
                 </div>
               ) : (
                 <button
@@ -1155,19 +1155,49 @@ function GameAnalyzerView({ video, onClear }) {
           {cTied12 ? (
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <button onClick={() => setIsOvertime(true)} style={{ flex: 1, padding: "5px 0", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(201,168,76,0.4)", background: "rgba(201,168,76,0.1)", color: "#C9A84C", fontSize: 11, fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>Overtime</button>
-              {rounds.length > 0 && <button onClick={() => setRounds(r => r.slice(0, -1))} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.35)", fontSize: 10, fontWeight: 500, cursor: "pointer", fontFamily: "'Outfit', sans-serif", borderRadius: 5, padding: "4px 10px", letterSpacing: 0.2 }}>undo</button>}
+              {rounds.length > 0 && <button onClick={() => setRounds(r => r.slice(0, -1))} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.35)", fontSize: 13, cursor: "pointer", fontFamily: "'Outfit', sans-serif", borderRadius: 5, padding: "3px 8px", lineHeight: 1 }}>↩</button>}
             </div>
           ) : cGameOver ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 11, color: cScore.me > cScore.them ? "#4ADE80" : "#F87171", fontWeight: 600 }}>{cScore.me > cScore.them ? "Victory" : "Defeat"}</span>
-              {rounds.length > 0 && <button onClick={() => setRounds(r => r.slice(0, -1))} style={{ marginLeft: "auto", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.35)", fontSize: 10, fontWeight: 500, cursor: "pointer", fontFamily: "'Outfit', sans-serif", borderRadius: 5, padding: "4px 10px", letterSpacing: 0.2 }}>undo</button>}
+              {rounds.length > 0 && <button onClick={() => setRounds(r => r.slice(0, -1))} style={{ marginLeft: "auto", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.35)", fontSize: 13, cursor: "pointer", fontFamily: "'Outfit', sans-serif", borderRadius: 5, padding: "3px 8px", lineHeight: 1 }}>↩</button>}
             </div>
           ) : (
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <span style={{ fontSize: 9, color: cNextColor, letterSpacing: 1.5, textTransform: "uppercase", opacity: 0.7 }}>{cNext}</span>
               <button onClick={() => setRounds(r => [...r, { win: true }])} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "5px 0", borderRadius: 6, cursor: "pointer", border: `1px solid ${cNextColor}44`, background: cNextColor + "14", color: cNextColor, fontSize: 11, fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>Win</button>
               <button onClick={() => setRounds(r => [...r, { win: false }])} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "5px 0", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: 500, fontFamily: "'Outfit', sans-serif" }}>Loss</button>
-              {rounds.length > 0 && <button onClick={() => setRounds(r => r.slice(0, -1))} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.35)", fontSize: 10, fontWeight: 500, cursor: "pointer", fontFamily: "'Outfit', sans-serif", borderRadius: 5, padding: "4px 10px", letterSpacing: 0.2 }}>undo</button>}
+              {rounds.length > 0 && <button onClick={() => setRounds(r => r.slice(0, -1))} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.35)", fontSize: 13, cursor: "pointer", fontFamily: "'Outfit', sans-serif", borderRadius: 5, padding: "3px 8px", lineHeight: 1 }}>↩</button>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Instruction + side selection — sits below HUD pill, same fixed layer */}
+      {phase === "working" && !startingSide && (
+        <div style={{
+          position: "fixed",
+          top: (pos?.top ?? cornerPos.top) + 52,
+          left: pos?.left ?? cornerPos.left,
+          width: 260,
+          background: "rgba(18,18,26,0.95)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 10,
+          backdropFilter: "blur(16px)",
+          padding: "12px 14px",
+          fontFamily: "'Outfit', sans-serif",
+          animation: "fadeUp 0.28s 0.32s ease-out both",
+          zIndex: 100,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+        }}>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.48)", lineHeight: 1.6, margin: instrCount >= INSTR.length ? "0 0 10px" : "0" }}>
+            {INSTR.slice(0, instrCount)}
+            {instrCount < INSTR.length && <span style={{ color: "rgba(255,255,255,0.25)", animation: "blink 0.6s step-end infinite" }}>|</span>}
+          </p>
+          {instrCount >= INSTR.length && (
+            <div style={{ display: "flex", gap: 6, animation: "fadeUp 0.2s ease-out both" }}>
+              <button onClick={() => setStartingSide("attack")} style={{ flex: 1, padding: "5px 0", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(248,113,113,0.45)", background: "rgba(248,113,113,0.1)", color: "#F87171", fontSize: 11, fontWeight: 600, fontFamily: "'Outfit', sans-serif", transition: "all 0.15s" }}>Attack</button>
+              <button onClick={() => setStartingSide("defend")} style={{ flex: 1, padding: "5px 0", borderRadius: 6, cursor: "pointer", border: "1px solid rgba(148,163,184,0.4)", background: "rgba(148,163,184,0.08)", color: "#94A3B8", fontSize: 11, fontWeight: 600, fontFamily: "'Outfit', sans-serif", transition: "all 0.15s" }}>Defend</button>
             </div>
           )}
         </div>
@@ -1176,40 +1206,7 @@ function GameAnalyzerView({ video, onClear }) {
       document.body
     );
 
-    return (
-      <>
-        {hud}
-        {phase === "working" && (
-          <div style={{ animation: "fadeUp 0.4s ease-out both" }}>
-            <div style={{
-              overflow: "hidden",
-              maxHeight: startingSide ? "0px" : "260px",
-              opacity: startingSide ? 0 : 1,
-              transition: "max-height 0.38s ease, opacity 0.25s ease",
-            }}>
-              <p style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 600, color: "rgba(255,255,255,0.65)", fontFamily: "'Outfit', sans-serif", letterSpacing: 0.2, lineHeight: 1.5 }}>
-                {INSTR.slice(0, instrCount)}
-                {instrCount < INSTR.length && (
-                  <span style={{ color: "rgba(255,255,255,0.3)", animation: "blink 0.6s step-end infinite" }}>|</span>
-                )}
-              </p>
-              {instrCount >= INSTR.length && (
-                <div style={{ display: "flex", gap: 8, animation: "fadeUp 0.25s ease-out both" }}>
-                  <button
-                    onClick={() => setStartingSide("attack")}
-                    style={{ padding: "8px 24px", borderRadius: 8, cursor: "pointer", border: "1px solid rgba(248,113,113,0.45)", background: "rgba(248,113,113,0.1)", color: "#F87171", fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif", transition: "all 0.15s" }}
-                  >Attack</button>
-                  <button
-                    onClick={() => setStartingSide("defend")}
-                    style={{ padding: "8px 24px", borderRadius: 8, cursor: "pointer", border: "1px solid rgba(148,163,184,0.4)", background: "rgba(148,163,184,0.08)", color: "#94A3B8", fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif", transition: "all 0.15s" }}
-                  >Defend</button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </>
-    );
+    return <>{hud}</>;
   }
 
   /* ── Hero card (hero + erasing) ── */
@@ -1298,7 +1295,7 @@ function GameAnalyzerView({ video, onClear }) {
                 cursor: isErasing ? "default" : "pointer",
                 transition: "background 0.15s, border-color 0.15s, color 0.15s",
               }}
-            >Analyze</button>
+            >Go on</button>
           </div>
         </div>
       </div>
