@@ -893,6 +893,7 @@ function GameAnalyzerView({ video, onClear }) {
   const [rounds, setRounds] = useState([]);
   const [isOvertime, setIsOvertime] = useState(false);
   const [instrCount, setInstrCount] = useState(savedPhase === "working" ? Infinity : 0);
+  const [showScoreEdit, setShowScoreEdit] = useState(false);
 
   // Compute target corner position — scroll-independent: use offsetHeight, not getBoundingClientRect
   const [cornerPos] = useState(() => {
@@ -915,10 +916,8 @@ function GameAnalyzerView({ video, onClear }) {
 
   const T = "Now analyzing";
   const S = `${video.agent} · ${video.map}`;
-  const H = "What do you want to focus on?";
-  const FOCUS_OPTIONS = ["Positioning"];
   const INSTR = "Open the VOD and select which side you started on.";
-  const MAX = Math.max(T.length, S.length, H.length);
+  const MAX = Math.max(T.length, S.length);
   const cut = (str) => str.slice(0, Math.ceil(str.length * Math.max(0, 1 - charsGone / MAX)));
   const isErasing = phase === "erasing";
 
@@ -1029,7 +1028,7 @@ function GameAnalyzerView({ video, onClear }) {
         left: pos?.left ?? cornerPos.left,
         zIndex: 100,
         background: "rgba(18,18,26,0.95)",
-        border: `1px solid ${agentColor}33`,
+        border: "1px solid rgba(255,255,255,0.1)",
         borderRadius: 10,
         backdropFilter: "blur(16px)",
         display: "flex",
@@ -1037,7 +1036,7 @@ function GameAnalyzerView({ video, onClear }) {
         width: 260,
         padding: "7px 10px",
         transition: phase === "moving" ? "top 0.9s cubic-bezier(0.4,0,0.2,1), left 0.9s cubic-bezier(0.4,0,0.2,1)" : "none",
-        boxShadow: `0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px ${agentColor}0d`,
+        boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
         fontFamily: "'Outfit', sans-serif",
       }}>
         {/* ▶ Play */}
@@ -1048,9 +1047,9 @@ function GameAnalyzerView({ video, onClear }) {
             style={{
               width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center",
               borderRadius: 7,
-              background: hudPlayHover ? `${agentColor}22` : "rgba(255,255,255,0.05)",
-              border: `1px solid ${hudPlayHover ? agentColor + "55" : "rgba(255,255,255,0.09)"}`,
-              color: hudPlayHover ? agentColor : "rgba(255,255,255,0.45)",
+              background: hudPlayHover ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.05)",
+              border: `1px solid ${hudPlayHover ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.09)"}`,
+              color: hudPlayHover ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.45)",
               fontSize: 10, textDecoration: "none",
               transition: "background 0.15s, color 0.15s, border-color 0.15s",
             }}
@@ -1103,26 +1102,38 @@ function GameAnalyzerView({ video, onClear }) {
           left: pos?.left ?? cornerPos.left,
           width: 260,
           background: "rgba(18,18,26,0.95)",
-          border: `1px solid ${agentColor}33`,
+          border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 10,
           backdropFilter: "blur(16px)",
           padding: "10px 12px",
           fontFamily: "'Outfit', sans-serif",
           animation: "fadeUp 0.28s 0.32s ease-out both",
           zIndex: 100,
-          boxShadow: `0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px ${agentColor}0d`,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
         }}>
           {rounds.length === 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-              <span style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 1.5, textTransform: "uppercase" }}>Start</span>
-              {[["me"], ["them"]].map(([k], ki) => (
-                <span key={k} style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                  {ki > 0 && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", margin: "0 2px" }}>:</span>}
-                  <button onClick={() => setStartScore(s => ({ ...s, [k]: Math.max(0, s[k] - 1) }))} style={{ width: 16, height: 16, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", fontSize: 10, cursor: "pointer", lineHeight: 1, padding: 0, fontFamily: "'Outfit', sans-serif" }}>−</button>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", minWidth: 12, textAlign: "center" }}>{startScore[k]}</span>
-                  <button onClick={() => setStartScore(s => ({ ...s, [k]: s[k] + 1 }))} style={{ width: 16, height: 16, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", fontSize: 10, cursor: "pointer", lineHeight: 1, padding: 0, fontFamily: "'Outfit', sans-serif" }}>+</button>
-                </span>
-              ))}
+            <div style={{ marginBottom: 8, minHeight: 20 }}>
+              {showScoreEdit ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", letterSpacing: 1.5, textTransform: "uppercase", flexShrink: 0 }}>Start</span>
+                  {[["me"], ["them"]].map(([k], ki) => (
+                    <span key={k} style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                      {ki > 0 && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", margin: "0 2px" }}>:</span>}
+                      <button onClick={() => setStartScore(s => ({ ...s, [k]: Math.max(0, s[k] - 1) }))} style={{ width: 16, height: 16, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", fontSize: 10, cursor: "pointer", lineHeight: 1, padding: 0, fontFamily: "'Outfit', sans-serif" }}>−</button>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.55)", minWidth: 12, textAlign: "center" }}>{startScore[k]}</span>
+                      <button onClick={() => setStartScore(s => ({ ...s, [k]: s[k] + 1 }))} style={{ width: 16, height: 16, borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)", fontSize: 10, cursor: "pointer", lineHeight: 1, padding: 0, fontFamily: "'Outfit', sans-serif" }}>+</button>
+                    </span>
+                  ))}
+                  <button onClick={() => setShowScoreEdit(false)} style={{ marginLeft: 2, background: "none", border: "none", fontSize: 9, color: "rgba(255,255,255,0.25)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", letterSpacing: 0.5 }}>done</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowScoreEdit(true)}
+                  style={{ background: "none", border: "none", fontSize: 9, color: "rgba(255,255,255,0.18)", cursor: "pointer", fontFamily: "'Outfit', sans-serif", letterSpacing: 1, textTransform: "uppercase", padding: 0 }}
+                  onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.45)"}
+                  onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.18)"}
+                >≠ 0 : 0</button>
+              )}
             </div>
           )}
           <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: rounds.length > 0 ? 8 : 6 }}>
@@ -1208,7 +1219,6 @@ function GameAnalyzerView({ video, onClear }) {
 
   const tGone = cut(T) === "";
   const sGone = cut(S) === "";
-  const hGone = cut(H) === "";
   const COLLAPSE = "max-height 0.28s ease, opacity 0.22s ease, margin-bottom 0.28s ease, padding-top 0.28s ease, padding-bottom 0.28s ease";
   // Staggered entrance — only on first render, not during/after erase
   const stagger = (delay) => phase === "hero"
@@ -1219,89 +1229,76 @@ function GameAnalyzerView({ video, onClear }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div ref={boxRef} style={{
         background: "rgba(255,255,255,0.03)",
-        border: `1px solid ${agentColor}22`,
+        border: "1px solid rgba(255,255,255,0.07)",
         borderRadius: 14,
         padding: "72px 40px",
       }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
 
+          {/* "NOW ANALYZING" label */}
           <div style={{
-            fontSize: 11, color: "rgba(255,255,255,0.25)", letterSpacing: 3, textTransform: "uppercase",
             overflow: "hidden",
-            maxHeight: tGone ? "0px" : "2em",
+            maxHeight: tGone ? 0 : "2em",
             opacity: tGone ? 0 : 1,
-            marginBottom: tGone ? 0 : 20,
+            marginBottom: tGone ? 0 : 16,
             transition: COLLAPSE,
             ...stagger(0),
           }}>
-            {cut(T)}{cut(T) ? cur : null}
+            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.22)", letterSpacing: 3.5, textTransform: "uppercase", fontWeight: 500 }}>
+              {cut(T)}{cut(T) ? cur : null}
+            </span>
           </div>
 
-          {!isErasing ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48, ...stagger(90) }}>
-              <span style={{ fontSize: 15, color: agentColor, fontWeight: 600, letterSpacing: 0.5 }}>{video.agent}</span>
-              <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>·</span>
-              <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map}</span>
-            </div>
-          ) : (
-            <div style={{
-              display: "flex", alignItems: "center",
-              overflow: "hidden",
-              maxHeight: sGone ? "0px" : "3em",
-              opacity: sGone ? 0 : 1,
-              marginBottom: sGone ? 0 : 48,
-              transition: COLLAPSE,
-            }}>
-              {(() => {
-                const kept = Math.ceil(S.length * Math.max(0, 1 - charsGone / MAX));
-                const aLen = video.agent.length, sepLen = 3, mLen = video.map.length;
-                const aShow = Math.min(aLen, kept);
-                const sepShow = Math.min(sepLen, Math.max(0, kept - aLen));
-                const mShow = Math.min(mLen, Math.max(0, kept - aLen - sepLen));
-                const onMap = mShow > 0, onSep = !onMap && sepShow > 0;
-                return (
-                  <>
-                    {aShow > 0 && <span style={{ fontSize: 15, color: agentColor, fontWeight: 600 }}>{video.agent.slice(0, aShow)}{!onSep && !onMap && cur}</span>}
-                    {sepShow > 0 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>{" · ".slice(0, sepShow)}{onSep && cur}</span>}
-                    {mShow > 0 && <span style={{ fontSize: 15, color: "rgba(255,255,255,0.5)" }}>{video.map.slice(0, mShow)}{onMap && cur}</span>}
-                  </>
-                );
-              })()}
-            </div>
-          )}
-
+          {/* Agent · Map — stable wrapper avoids layout jump on erase */}
           <div style={{
             overflow: "hidden",
-            maxHeight: hGone ? "0px" : "3em",
-            opacity: hGone ? 0 : 1,
-            marginBottom: hGone ? 0 : 24,
+            maxHeight: sGone ? 0 : "3em",
+            opacity: sGone ? 0 : 1,
+            marginBottom: sGone ? 0 : 52,
             transition: COLLAPSE,
-            ...stagger(280),
+            ...stagger(100),
           }}>
-            <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.88)", margin: 0, letterSpacing: 0.3 }}>
-              {cut(H)}{cut(H) ? cur : null}
-            </p>
+            {!isErasing ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 22, color: agentColor, fontWeight: 700, letterSpacing: -0.3 }}>{video.agent}</span>
+                <span style={{ color: "rgba(255,255,255,0.15)", fontSize: 16 }}>·</span>
+                <span style={{ fontSize: 22, color: "rgba(255,255,255,0.35)", fontWeight: 400 }}>{video.map}</span>
+              </div>
+            ) : (
+              <span style={{ fontSize: 22, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>
+                {cut(S)}{cur}
+              </span>
+            )}
           </div>
 
+          {/* Single action button */}
           <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 14,
             overflow: "hidden",
-            maxHeight: isErasing ? "0px" : "160px",
+            maxHeight: isErasing ? 0 : "60px",
             opacity: isErasing ? 0 : 1,
-            marginBottom: isErasing ? 0 : 8,
             transition: COLLAPSE,
-            ...stagger(390),
+            ...stagger(220),
           }}>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-              {FOCUS_OPTIONS.map(opt => (
-                <FocusChip
-                  key={opt}
-                  label={opt}
-                  disabled={isErasing}
-                  onClick={() => { if (!isErasing) setPhase("erasing"); }}
-                />
-              ))}
-            </div>
+            <button
+              disabled={isErasing}
+              onClick={() => { if (!isErasing) setPhase("erasing"); }}
+              onMouseEnter={e => { if (!isErasing) { e.currentTarget.style.background = "rgba(255,255,255,0.09)"; e.currentTarget.style.color = "rgba(255,255,255,0.88)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)"; } }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+              style={{
+                padding: "10px 40px",
+                borderRadius: 9,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "rgba(255,255,255,0.6)",
+                fontSize: 11,
+                fontWeight: 600,
+                fontFamily: "'Outfit', sans-serif",
+                letterSpacing: 2.5,
+                textTransform: "uppercase",
+                cursor: isErasing ? "default" : "pointer",
+                transition: "background 0.15s, border-color 0.15s, color 0.15s",
+              }}
+            >Analyze</button>
           </div>
         </div>
       </div>
