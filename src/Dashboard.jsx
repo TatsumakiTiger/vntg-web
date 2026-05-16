@@ -386,6 +386,7 @@ export default function Dashboard() {
         @keyframes flameGlow { 0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(1); } 50% { opacity: 0.85; transform: translateX(-50%) scale(1.15); } }
         @keyframes xpPop { 0% { opacity:0; transform:translateY(-50%) translateX(6px) scale(0.7); } 18% { opacity:1; transform:translateY(-50%) translateX(-3px) scale(1.08); } 28% { transform:translateY(-50%) translateX(0) scale(1); } 72% { opacity:1; transform:translateY(-50%) translateX(0) scale(1); } 100% { opacity:0; transform:translateY(-50%) translateX(-8px) scale(0.9); } }
         @keyframes blink { 50% { opacity: 0; } }
+        @keyframes panelIn { from { opacity: 0; transform: translateX(-18px) scale(0.98); } to { opacity: 1; transform: translateX(0) scale(1); } }
       `}</style>
 
       <div style={styles.root}>
@@ -894,6 +895,10 @@ function GameAnalyzerView({ video, onClear }) {
   const [isOvertime, setIsOvertime] = useState(false);
   const [instrCount, setInstrCount] = useState(savedPhase === "working" ? Infinity : 0);
   const [showScoreEdit, setShowScoreEdit] = useState(false);
+  const trackerRef = useRef(null);
+  const [trackerHeight, setTrackerHeight] = useState(96);
+  const [contentCount, setContentCount] = useState(0);
+  const CONTENT_TEXT = "Analyze positioning patterns, off-angles, and rotation timing. Track how movement habits and contact decisions affect round outcomes across both halves of the game.";
 
   // Compute target corner position — scroll-independent: use offsetHeight, not getBoundingClientRect
   const [cornerPos] = useState(() => {
@@ -977,6 +982,28 @@ function GameAnalyzerView({ video, onClear }) {
     }, 18);
     return () => clearInterval(id);
   }, [phase]);
+
+  /* type content text when side selected */
+  useEffect(() => {
+    if (!startingSide) { setContentCount(0); return; }
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setContentCount(i);
+      if (i >= CONTENT_TEXT.length) clearInterval(id);
+    }, 24);
+    return () => clearInterval(id);
+  }, [!!startingSide]);
+
+  /* track round tracker height via ResizeObserver */
+  useEffect(() => {
+    const el = trackerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setTrackerHeight(el.offsetHeight));
+    ro.observe(el);
+    setTrackerHeight(el.offsetHeight);
+    return () => ro.disconnect();
+  }, [startingSide, rounds.length, isOvertime]);
 
   // Render colored info from typed count
   function renderInfo(count) {
@@ -1096,7 +1123,7 @@ function GameAnalyzerView({ video, onClear }) {
 
       {/* Compact round tracker — appears below HUD pill after side selected */}
       {phase === "working" && startingSide && (
-        <div style={{
+        <div ref={trackerRef} style={{
           position: "fixed",
           top: (pos?.top ?? cornerPos.top) + 52,
           left: pos?.left ?? cornerPos.left,
@@ -1203,28 +1230,33 @@ function GameAnalyzerView({ video, onClear }) {
         </div>
       )}
 
-      {/* Full-width content panel — appears to the right of the HUD panels */}
+      {/* Full-width content panel — same height as both left panels combined */}
       {phase === "working" && startingSide && (
         <div style={{
           position: "fixed",
           top: pos?.top ?? cornerPos.top,
           left: (pos?.left ?? cornerPos.left) + 276,
           right: 20,
+          height: 52 + trackerHeight,
           background: "rgba(18,18,26,0.95)",
           border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 10,
           backdropFilter: "blur(16px)",
-          padding: "18px 22px",
+          padding: "18px 24px",
           fontFamily: "'Outfit', sans-serif",
-          animation: "fadeUp 0.45s 0.2s ease-out both",
+          animation: "panelIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both",
           zIndex: 100,
           boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
         }}>
-          <div style={{ fontSize: 9, letterSpacing: 2.5, textTransform: "uppercase", color: "rgba(255,255,255,0.18)", marginBottom: 12, fontWeight: 600 }}>
-            Analysis
-          </div>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.22)", lineHeight: 1.8, fontWeight: 300, margin: 0 }}>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum.
+          <p style={{ fontSize: 18, color: "rgba(255,255,255,0.72)", lineHeight: 1.7, fontWeight: 400, margin: 0, letterSpacing: 0.1 }}>
+            {CONTENT_TEXT.slice(0, contentCount)}
+            {contentCount < CONTENT_TEXT.length && (
+              <span style={{ animation: "blink 0.6s step-end infinite", opacity: 0.45 }}>|</span>
+            )}
           </p>
         </div>
       )}
