@@ -1202,6 +1202,32 @@ function GameAnalyzerView({ video, onClear }) {
           )}
         </div>
       )}
+
+      {/* Full-width content panel — appears to the right of the HUD panels */}
+      {phase === "working" && startingSide && (
+        <div style={{
+          position: "fixed",
+          top: pos?.top ?? cornerPos.top,
+          left: (pos?.left ?? cornerPos.left) + 276,
+          right: 20,
+          background: "rgba(18,18,26,0.95)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 10,
+          backdropFilter: "blur(16px)",
+          padding: "18px 22px",
+          fontFamily: "'Outfit', sans-serif",
+          animation: "fadeUp 0.45s 0.2s ease-out both",
+          zIndex: 100,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+        }}>
+          <div style={{ fontSize: 9, letterSpacing: 2.5, textTransform: "uppercase", color: "rgba(255,255,255,0.18)", marginBottom: 12, fontWeight: 600 }}>
+            Analysis
+          </div>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.22)", lineHeight: 1.8, fontWeight: 300, margin: 0 }}>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum.
+          </p>
+        </div>
+      )}
       </>,
       document.body
     );
